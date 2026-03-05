@@ -4,7 +4,7 @@ import dbConnect from "@/lib/mongodb";
 import { Donation, Donor } from "@/lib/models";
 
 // GET /api/dashboard - Aggregated stats for admin dashboard
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await auth();
     if (!session) {
@@ -12,6 +12,27 @@ export async function GET() {
     }
 
     await dbConnect();
+
+    const { searchParams } = new URL(request.url);
+    const range = searchParams.get("range") || "1Y";
+
+    const rangeToMonths: Record<string, number | null> = {
+      "1M": 1,
+      "3M": 3,
+      "6M": 6,
+      "1Y": 12,
+      "3Y": 36,
+      MAX: null,
+    };
+
+    const selectedMonths = rangeToMonths[range] ?? 12;
+    const now = new Date();
+    const startDate =
+      selectedMonths === null
+        ? new Date(0)
+        : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (selectedMonths - 1), 1));
+
+    const completedStatuses = ["completed", "success"];
 
     // Run all aggregations in parallel
     const [
@@ -25,7 +46,7 @@ export async function GET() {
     ] = await Promise.all([
       // Total donations (completed only)
       Donation.aggregate([
-        { $match: { status: "completed" } },
+        { $match: { status: { $in: completedStatuses }, createdAt: { $gte: startDate } } },
         {
           $group: {
             _id: null,
@@ -44,9 +65,9 @@ export async function GET() {
         .sort({ createdAt: -1 })
         .limit(10)
         .lean(),
-      // Monthly donation trend (last 12 months)
+      // Monthly donation trend (selected range)
       Donation.aggregate([
-        { $match: { status: "completed" } },
+        { $match: { status: { $in: completedStatuses }, createdAt: { $gte: startDate } } },
         {
           $group: {
             _id: {
@@ -61,7 +82,7 @@ export async function GET() {
       ]),
       // Monthly donor growth (unique donors with completed donations per month)
       Donation.aggregate([
-        { $match: { status: "completed" } },
+        { $match: { status: { $in: completedStatuses }, createdAt: { $gte: startDate } } },
         {
           $group: {
             _id: {
@@ -84,6 +105,7 @@ export async function GET() {
       ]),
       // Status breakdown
       Donation.aggregate([
+        { $match: { createdAt: { $gte: startDate } } },
         {
           $group: {
             _id: "$status",
@@ -121,11 +143,31 @@ export async function GET() {
       donorsByMonth.set(key, month.count);
     }
 
-    const now = new Date();
+    const anchorDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
     const anchorMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-    const monthSeries = Array.from({ length: 12 }, (_, index) => {
-      const date = new Date(anchorMonth);
-      date.setUTCMonth(anchorMonth.getUTCMonth() - (11 - index));
+    let rangeMonths = selectedMonths;
+
+    if (selectedMonths === null) {
+      const allMonthKeys = [...monthlyDonations, ...monthlyDonors].map((item) => ({
+        year: item._id.year,
+        month: item._id.month,
+      }));
+      const earliest = allMonthKeys.sort((a, b) => {
+        if (a.year !== b.year) return a.year - b.year;
+        return a.month - b.month;
+      })[0];
+
+      if (earliest) {
+        rangeMonths = (now.getUTCFullYear() - earliest.year) * 12 + (now.getUTCMonth() + 1 - earliest.month) + 1;
+      } else {
+        rangeMonths = 12;
+      }
+    }
+
+    const safeRangeMonths = Math.max(rangeMonths || 12, 1);
+    const monthSeries = Array.from({ length: safeRangeMonths }, (_, index) => {
+      const date = new Date(anchorDate);
+      date.setUTCMonth(anchorMonth.getUTCMonth() - (safeRangeMonths - 1 - index));
       const year = date.getUTCFullYear();
       const month = date.getUTCMonth() + 1;
       const key = `${year}-${String(month).padStart(2, "0")}`;
@@ -157,6 +199,7 @@ export async function GET() {
       recentDonations,
       donationTrend,
       donorGrowth,
+      selectedRange: range,
       statusBreakdown: statusBreakdown.reduce(
         (acc: Record<string, unknown>, s: any) => {
           acc[s._id] = { count: s.count, total: s.total };

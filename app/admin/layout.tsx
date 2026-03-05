@@ -13,7 +13,6 @@ import {
   Settings,
   LogOut,
   Menu,
-  Bell,
   Search,
   MessageSquare,
   FileText,
@@ -40,6 +39,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
+import { NotificationBell } from "./components/notification-bell"
 
 const sidebarLinks = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -51,6 +51,7 @@ const sidebarLinks = [
   { href: "/admin/documents", label: "Documents", icon: FileText },
   { href: "/admin/csr", label: "CSR Projects", icon: Handshake },
   { href: "/admin/csr/requests", label: "80G Requests", icon: ClipboardCheck },
+  { href: "/admin/tax-documentation", label: "Tax Documentation", icon: FileText },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ]
 
@@ -189,11 +190,7 @@ export default function AdminLayout({
           </div>
 
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="size-4" />
-              <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-destructive" />
-              <span className="sr-only">Notifications</span>
-            </Button>
+            <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary">

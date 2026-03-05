@@ -8,6 +8,9 @@ export interface IContactInquiry extends Document {
   message: string;
   status: "new" | "read" | "replied";
   repliedAt?: Date;
+  replyContent?: string;
+  replyEmailSent: boolean;
+  replyTimestamp?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,6 +28,9 @@ const ContactInquirySchema = new Schema<IContactInquiry>(
       default: "new",
     },
     repliedAt: { type: Date },
+    replyContent: { type: String },
+    replyEmailSent: { type: Boolean, default: false },
+    replyTimestamp: { type: Date },
   },
   { timestamps: true }
 );

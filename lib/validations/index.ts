@@ -52,7 +52,7 @@ export const donationSchema = z.object({
 });
 
 export const donationUpdateSchema = z.object({
-  status: z.enum(["pending", "completed", "failed", "refunded"]).optional(),
+  status: z.enum(["pending", "completed", "success", "failed", "refunded"]).optional(),
   notes: z.string().optional(),
 });
 
@@ -156,6 +156,22 @@ export const csrPledgeSchema = z.object({
 // Certificate schemas
 export const certificateGenerateSchema = z.object({
   donationId: z.string(),
+  resendEmail: z.boolean().optional().default(true),
+});
+
+export const certificateResendSchema = z.object({
+  certificateId: z.string(),
+});
+
+export const notificationUpdateSchema = z.object({
+  type: z.enum(["donation", "inquiry"]),
+  id: z.string(),
+});
+
+export const inquiryUpdateSchema = z.object({
+  status: z.enum(["new", "read", "replied"]).optional(),
+  replyContent: z.string().min(10).optional(),
+  sendEmail: z.boolean().optional().default(false),
 });
 
 // Query parameter schemas

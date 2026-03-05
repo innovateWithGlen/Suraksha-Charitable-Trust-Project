@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo, useState } from "react"
 import useSWR from "swr"
 import {
   IndianRupee,
@@ -18,8 +19,8 @@ import {
 import {
   AreaChart,
   Area,
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -36,11 +37,17 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Button } from "@/components/ui/button"
+import { ButtonGroup } from "@/components/ui/button-group"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 export default function AdminDashboard() {
-  const { data, isLoading, error } = useSWR("/api/dashboard", fetcher, {
+  const [range, setRange] = useState<"1M" | "3M" | "6M" | "1Y" | "3Y" | "MAX">("1Y")
+
+  const query = useMemo(() => `/api/dashboard?range=${range}`, [range])
+
+  const { data, isLoading, error } = useSWR(query, fetcher, {
     refreshInterval: 5000,
   })
 
@@ -130,8 +137,26 @@ export default function AdminDashboard() {
       <div className="grid gap-6 lg:grid-cols-5">
         <Card className="flex flex-col overflow-hidden lg:col-span-3">
           <CardHeader className="flex-none">
-            <CardTitle>Donations</CardTitle>
-            <CardDescription>Monthly donation volume in INR</CardDescription>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle>Donations</CardTitle>
+                <CardDescription>Monthly donation volume in INR</CardDescription>
+              </div>
+              <ButtonGroup className="rounded-md border border-border bg-muted/30 p-1">
+                {(["1M", "3M", "6M", "1Y", "3Y", "MAX"] as const).map((option) => (
+                  <Button
+                    key={option}
+                    type="button"
+                    size="sm"
+                    variant={range === option ? "default" : "ghost"}
+                    className="h-8 px-3 text-xs"
+                    onClick={() => setRange(option)}
+                  >
+                    {option}
+                  </Button>
+                ))}
+              </ButtonGroup>
+            </div>
           </CardHeader>
           <CardContent className="flex min-h-0 flex-1 flex-col">
             {isLoading ? (
@@ -173,13 +198,13 @@ export default function AdminDashboard() {
             ) : (
               <div className="relative min-h-0 w-full flex-1" style={{ minHeight: 280 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={donorGrowth} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                  <LineChart data={donorGrowth} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" fontSize={12} />
                     <YAxis fontSize={12} width={35} />
                     <Tooltip formatter={(value: number) => [value, "Donors"]} contentStyle={{ borderRadius: 8, fontSize: 12 }} />
-                    <Bar dataKey="count" fill="#E8B931" radius={[4, 4, 0, 0]} />
-                  </BarChart>
+                    <Line type="monotone" dataKey="count" stroke="#E8B931" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
             )}
@@ -227,8 +252,8 @@ export default function AdminDashboard() {
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={txn.status === "completed" ? "default" : txn.status === "pending" ? "secondary" : "destructive"}
-                        className={txn.status === "completed" ? "bg-green-100 text-green-700 hover:bg-green-100" : ""}
+                        variant={txn.status === "completed" || txn.status === "success" ? "default" : txn.status === "pending" ? "secondary" : "destructive"}
+                        className={txn.status === "completed" || txn.status === "success" ? "bg-green-100 text-green-700 hover:bg-green-100" : ""}
                       >
                         {txn.status}
                       </Badge>

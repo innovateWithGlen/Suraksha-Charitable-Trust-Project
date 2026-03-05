@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
 import { ContactInquiry } from "@/lib/models";
+import { inquiryUpdateSchema } from "@/lib/validations";
+import { sendInquiryReplyEmail } from "@/lib/email";
 
 // PUT /api/contact/[id] - Update inquiry status
 export async function PUT(
@@ -16,7 +18,7 @@ export async function PUT(
 
     await dbConnect();
     const { id } = await params;
-    const body = await request.json();
+    const body = inquiryUpdateSchema.parse(await request.json());
 
     const updateData: Record<string, unknown> = {};
     if (body.status) {
@@ -24,6 +26,14 @@ export async function PUT(
       if (body.status === "replied") {
         updateData.repliedAt = new Date();
       }
+    }
+
+    if (body.replyContent) {
+      updateData.replyContent = body.replyContent;
+      updateData.replyTimestamp = new Date();
+      updateData.status = "replied";
+      updateData.repliedAt = new Date();
+      updateData.replyEmailSent = false;
     }
 
     const inquiry = await ContactInquiry.findByIdAndUpdate(
@@ -39,9 +49,33 @@ export async function PUT(
       );
     }
 
+    if (body.replyContent && body.sendEmail) {
+      try {
+        await sendInquiryReplyEmail({
+          toEmail: inquiry.email,
+          toName: inquiry.name,
+          subject: inquiry.subject,
+          replyContent: body.replyContent,
+        });
+
+        await ContactInquiry.updateOne(
+          { _id: inquiry._id },
+          { $set: { replyEmailSent: true } }
+        );
+      } catch (emailError) {
+        console.error("Failed to send inquiry reply email:", emailError);
+      }
+    }
+
     return NextResponse.json({ inquiry });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("PUT /api/contact/[id] error:", error);
+    if ((error as { name?: string }).name === "ZodError") {
+      return NextResponse.json(
+        { error: "Validation failed", details: (error as { errors?: unknown }).errors },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { error: "Failed to update inquiry" },
       { status: 500 }

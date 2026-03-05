@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import dbConnect from "@/lib/mongodb";
-import { Donation, Donor, Certificate } from "@/lib/models";
+import { Donation, Donor } from "@/lib/models";
 import { sendDonationConfirmation } from "@/lib/email";
-import {
-  generateCertificateHTML,
-  generateCertificateNumber,
-} from "@/lib/certificate-generator";
+import { generateReceiptForDonation } from "@/lib/services/certificate-service";
 
 // POST /api/payments/verify - Verify Razorpay payment
 export async function POST(request: Request) {
@@ -73,31 +70,29 @@ export async function POST(request: Request) {
       $set: { lastDonationDate: new Date(), status: "active" },
     });
 
-    // Generate 80G certificate
-    const certificateNumber = generateCertificateNumber();
-    const certificateHTML = generateCertificateHTML({
-      certificateNumber,
-      donorName: donation.donorName,
-      amount: donation.amount,
-      donationDate: donation.createdAt,
-      transactionId: donation.transactionId,
-      trustName: "Suraksha Charitable Trust",
-      trustRegistrationNumber: "80G/2024/XXXXX",
-      trustAddress: "Mumbai, Maharashtra, India",
-      trustPan: "AAATS1234A",
-    });
+    let receipt: {
+      id: string;
+      number: string;
+      url: string;
+      sent: boolean;
+    } | null = null;
 
-    // Save certificate record
-    const certificate = await Certificate.create({
-      donationId: donation._id,
-      donorId: donation.donorId,
-      certificateNumber,
-      pdfUrl: "", // Will be updated when PDF is generated
-      type: "auto",
-      donorName: donation.donorName,
-      amount: donation.amount,
-      donationDate: donation.createdAt,
-    });
+    if (donation.requires80G) {
+      try {
+        const generated = await generateReceiptForDonation(String(donation._id), {
+          resendEmail: true,
+          forceRegenerate: false,
+        });
+        receipt = {
+          id: generated.certificateId,
+          number: generated.certificateNumber,
+          url: generated.pdfUrl,
+          sent: generated.receiptSent,
+        };
+      } catch (receiptError) {
+        console.error("Failed to auto-generate 80G receipt:", receiptError);
+      }
+    }
 
     // Send confirmation email (non-blocking)
     sendDonationConfirmation(
@@ -115,10 +110,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       donation,
-      certificate: {
-        id: certificate._id,
-        number: certificateNumber,
-      },
+      receipt,
     });
   } catch (error) {
     console.error("Payment verification error:", error);

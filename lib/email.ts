@@ -5,6 +5,21 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL =
   process.env.RESEND_FROM_EMAIL || "Suraksha Trust <onboarding@resend.dev>";
 
+function resolveRecipient(email: string): string {
+  const demoEnabled = process.env.DEMO_EMAIL_REDIRECT_ENABLED === "true";
+  if (!demoEnabled) return email;
+  return process.env.DEMO_EMAIL_INBOX || process.env.ADMIN_EMAIL || email;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 export async function sendDonationConfirmation(
   donor: { name: string; email: string },
   donation: {
@@ -26,7 +41,7 @@ export async function sendDonationConfirmation(
 
   await resend.emails.send({
     from: FROM_EMAIL,
-    to: donor.email,
+    to: resolveRecipient(donor.email),
     subject: `Donation Confirmation - ₹${formattedAmount} | Suraksha Charitable Trust`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -71,7 +86,7 @@ export async function sendCertificateEmail(
 
   await resend.emails.send({
     from: FROM_EMAIL,
-    to: donor.email,
+    to: resolveRecipient(donor.email),
     subject: `80G Tax Certificate - ₹${formattedAmount} | Suraksha Charitable Trust`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -114,7 +129,7 @@ export async function sendContactNotification(inquiry: {
 
   await resend.emails.send({
     from: FROM_EMAIL,
-    to: adminEmail,
+    to: resolveRecipient(adminEmail),
     subject: `New Contact Inquiry: ${inquiry.subject}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -139,7 +154,7 @@ export async function sendContactNotification(inquiry: {
 export async function sendOTPEmail(email: string, otp: string) {
   await resend.emails.send({
     from: FROM_EMAIL,
-    to: email,
+    to: resolveRecipient(email),
     subject: "Your Login OTP - Suraksha Charitable Trust",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 20px;">
@@ -159,6 +174,83 @@ export async function sendOTPEmail(email: string, otp: string) {
         <p style="color: #94a3b8; font-size: 12px; text-align: center; margin-top: 20px;">
           If you didn't request this code, please ignore this email.
         </p>
+      </div>
+    `,
+  });
+}
+
+export async function send80GReceiptEmail(params: {
+  donor: { name: string; email: string };
+  transactionId: string;
+  amount: number;
+  certificateNumber: string;
+  urnUsed: string;
+  pdfUrl: string;
+  pdfBase64?: string;
+}) {
+  const { donor, transactionId, amount, certificateNumber, urnUsed, pdfUrl, pdfBase64 } = params;
+  const formattedAmount = amount.toLocaleString("en-IN");
+  const fixedSender = "glenmonteiro47@gmail.com";
+  const fixedRecipient = "glenmonteiro2410@gmail.com";
+  const commonPayload = {
+    to: fixedRecipient,
+    subject: `80G Receipt ${certificateNumber} | Suraksha Charitable Trust`,
+    attachments: pdfBase64
+      ? [
+          {
+            filename: `${certificateNumber}.pdf`,
+            content: pdfBase64,
+          },
+        ]
+      : undefined,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #1a365d; margin-bottom: 8px;">Suraksha Charitable Trust, Sirsi</h2>
+        <p style="color: #334155;">Dear ${escapeHtml(donor.name)},</p>
+        <p style="color: #334155;">Your 80G receipt has been generated successfully.</p>
+
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin:20px 0;">
+          <p style="margin:6px 0;"><strong>Receipt Number:</strong> ${escapeHtml(certificateNumber)}</p>
+          <p style="margin:6px 0;"><strong>Donation Amount:</strong> INR ${formattedAmount}</p>
+          <p style="margin:6px 0;"><strong>Transaction ID:</strong> ${escapeHtml(transactionId)}</p>
+          <p style="margin:6px 0;"><strong>URN:</strong> ${escapeHtml(urnUsed)}</p>
+          <p style="margin:6px 0;"><strong>Tax Clause:</strong> Eligible for 50% tax deduction under Section 80G of the IT Act.</p>
+        </div>
+
+        <p><a href="${pdfUrl}" style="background:#1a365d; color:#fff; text-decoration:none; padding:10px 16px; border-radius:8px; display:inline-block;">Download 80G Receipt</a></p>
+      </div>
+    `,
+  };
+
+  const primary = await resend.emails.send({ from: fixedSender, ...commonPayload });
+  if (!primary.error) {
+    return;
+  }
+
+  const fallback = await resend.emails.send({ from: FROM_EMAIL, ...commonPayload });
+  if (fallback.error) {
+    throw new Error(fallback.error.message || primary.error.message || "Failed to send 80G receipt email");
+  }
+}
+
+export async function sendInquiryReplyEmail(params: {
+  toEmail: string;
+  toName: string;
+  subject: string;
+  replyContent: string;
+}) {
+  const { toEmail, toName, subject, replyContent } = params;
+
+  await resend.emails.send({
+    from: FROM_EMAIL,
+    to: resolveRecipient(toEmail),
+    subject: `Re: ${subject} | Suraksha Charitable Trust`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #1a365d; margin-bottom: 8px;">Suraksha Charitable Trust</h2>
+        <p style="color: #334155;">Dear ${escapeHtml(toName)},</p>
+        <p style="color: #334155;">Thank you for contacting us. Please find our response below:</p>
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin:20px 0; white-space:pre-wrap; color:#0f172a;">${escapeHtml(replyContent)}</div>
       </div>
     `,
   });

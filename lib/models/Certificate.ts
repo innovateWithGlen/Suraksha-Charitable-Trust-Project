@@ -11,6 +11,13 @@ export interface ICertificate extends Document {
   amount: number;
   donationDate: Date;
   generatedAt: Date;
+  urnUsed: string;
+  receiptSent: boolean;
+  receiptSentAt?: Date;
+  resendCount: number;
+  lastResentAt?: Date;
+  blobPath?: string;
+  pdfBase64?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,6 +38,13 @@ const CertificateSchema = new Schema<ICertificate>(
     amount: { type: Number, required: true },
     donationDate: { type: Date, required: true },
     generatedAt: { type: Date, default: Date.now },
+    urnUsed: { type: String, required: true },
+    receiptSent: { type: Boolean, default: false },
+    receiptSentAt: { type: Date },
+    resendCount: { type: Number, default: 0 },
+    lastResentAt: { type: Date },
+    blobPath: { type: String },
+    pdfBase64: { type: String },
   },
   { timestamps: true }
 );

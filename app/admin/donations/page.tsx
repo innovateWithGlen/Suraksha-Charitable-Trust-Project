@@ -2,13 +2,14 @@
 
 import { useMemo, useState } from "react"
 import useSWR, { mutate } from "swr"
-import { Download, Search, Filter } from "lucide-react"
+import { Download, Search, Filter, Receipt, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "sonner"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -26,6 +27,48 @@ export default function DonationsPage() {
 
   const { data, isLoading } = useSWR(query, fetcher, { refreshInterval: 5000 })
   const donations = data?.donations || []
+
+  const generateReceipt = async (donationId: string) => {
+    const res = await fetch("/api/certificates/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ donationId, resendEmail: true }),
+    })
+
+    const payload = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      toast.error(payload.error || "Failed to generate 80G receipt")
+      return
+    }
+
+    toast.success("80G receipt generated and sent")
+    mutate(query)
+  }
+
+  const resendReceipt = async (donationId: string) => {
+    const certRes = await fetch(`/api/certificates?donationId=${donationId}`)
+    const certPayload = await certRes.json().catch(() => ({}))
+    const certificate = certPayload?.certificates?.[0]
+    if (!certificate) {
+      toast.error("No receipt found for this donation")
+      return
+    }
+
+    const resendRes = await fetch("/api/certificates/resend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ certificateId: certificate._id }),
+    })
+
+    if (!resendRes.ok) {
+      const err = await resendRes.json().catch(() => ({ error: "Failed to resend" }))
+      toast.error(err.error || "Failed to resend receipt")
+      return
+    }
+
+    toast.success("Receipt sent to donor email")
+    mutate(query)
+  }
 
   const exportCsv = () => {
     const rows = [
@@ -106,13 +149,15 @@ export default function DonationsPage() {
                 <TableHead>Method</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>80G</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={6}>Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8}>Loading...</TableCell></TableRow>
               ) : donations.length === 0 ? (
-                <TableRow><TableCell colSpan={6}>No donations found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8}>No donations found</TableCell></TableRow>
               ) : (
                 donations.map((d: any) => (
                   <TableRow key={d._id}>
@@ -129,10 +174,39 @@ export default function DonationsPage() {
                       {new Date(d.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={d.status === "completed" ? "default" : d.status === "pending" ? "secondary" : "destructive"}
-                        className={d.status === "completed" ? "bg-green-100 text-green-700 hover:bg-green-100" : ""}>
+                      <Badge variant={d.status === "completed" || d.status === "success" ? "default" : d.status === "pending" ? "secondary" : "destructive"}
+                        className={d.status === "completed" || d.status === "success" ? "bg-green-100 text-green-700 hover:bg-green-100" : ""}>
                         {d.status}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {d.requires80G ? (
+                        <Badge variant="secondary">Required</Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">No</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {d.requires80G ? (
+                          <Button size="sm" variant="outline" onClick={() => generateReceipt(d._id)}>
+                            <Receipt className="mr-1 size-3" />
+                            Generate 80G
+                          </Button>
+                        ) : null}
+                        {d.certificateUrl ? (
+                          <Button size="sm" variant="outline" asChild>
+                            <a href={d.certificateUrl} target="_blank" rel="noreferrer">
+                              <Download className="mr-1 size-3" /> Download
+                            </a>
+                          </Button>
+                        ) : null}
+                        {d.requires80G && d.certificateUrl ? (
+                          <Button size="sm" variant="outline" onClick={() => resendReceipt(d._id)}>
+                            <Send className="mr-1 size-3" /> Re-send
+                          </Button>
+                        ) : null}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

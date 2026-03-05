@@ -8,12 +8,18 @@ export interface IDonation extends Document {
   amount: number;
   method: "upi" | "card" | "netbanking" | "wallet" | "other";
   requires80G: boolean;
-  status: "pending" | "completed" | "failed" | "refunded";
+  status: "pending" | "completed" | "success" | "failed" | "refunded";
   transactionId: string;
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
   razorpaySignature?: string;
   receiptGenerated: boolean;
+  receiptSent: boolean;
+  receiptSentAt?: Date;
+  urnUsed?: string;
+  receiptTimestamp?: Date;
+  notificationRead: boolean;
+  notificationReadAt?: Date;
   certificateUrl?: string;
   notes?: string;
   createdAt: Date;
@@ -35,7 +41,7 @@ const DonationSchema = new Schema<IDonation>(
     requires80G: { type: Boolean, default: false },
     status: {
       type: String,
-      enum: ["pending", "completed", "failed", "refunded"],
+      enum: ["pending", "completed", "success", "failed", "refunded"],
       default: "pending",
     },
     transactionId: { type: String, required: true, unique: true },
@@ -43,6 +49,12 @@ const DonationSchema = new Schema<IDonation>(
     razorpayPaymentId: { type: String },
     razorpaySignature: { type: String },
     receiptGenerated: { type: Boolean, default: false },
+    receiptSent: { type: Boolean, default: false },
+    receiptSentAt: { type: Date },
+    urnUsed: { type: String },
+    receiptTimestamp: { type: Date },
+    notificationRead: { type: Boolean, default: false },
+    notificationReadAt: { type: Date },
     certificateUrl: { type: String },
     notes: { type: String },
   },
@@ -52,6 +64,7 @@ const DonationSchema = new Schema<IDonation>(
 DonationSchema.index({ donorId: 1 });
 DonationSchema.index({ status: 1 });
 DonationSchema.index({ createdAt: -1 });
+DonationSchema.index({ notificationRead: 1, status: 1, createdAt: -1 });
 
 const Donation: Model<IDonation> =
   mongoose.models.Donation ||
