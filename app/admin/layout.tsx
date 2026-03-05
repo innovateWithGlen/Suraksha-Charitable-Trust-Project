@@ -18,6 +18,8 @@ import {
   MessageSquare,
   FileText,
   ArrowLeft,
+  Handshake,
+  ClipboardCheck,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -47,6 +49,8 @@ const sidebarLinks = [
   { href: "/admin/gallery", label: "Gallery", icon: ImageIcon },
   { href: "/admin/inquiries", label: "Inquiries", icon: MessageSquare },
   { href: "/admin/documents", label: "Documents", icon: FileText },
+  { href: "/admin/csr", label: "CSR Projects", icon: Handshake },
+  { href: "/admin/csr/requests", label: "80G Requests", icon: ClipboardCheck },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ]
 

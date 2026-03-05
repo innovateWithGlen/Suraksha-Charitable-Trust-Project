@@ -15,7 +15,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 
-const contactDetails = [
+const fallbackContactDetails = [
   {
     icon: Phone,
     title: "Phone",
@@ -95,6 +95,7 @@ export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [faqs, setFaqs] = useState(fallbackFaqs)
+  const [contactDetails, setContactDetails] = useState(fallbackContactDetails)
 
   useEffect(() => {
     let mounted = true
@@ -121,6 +122,55 @@ export default function ContactPage() {
     }
 
     loadFaqs()
+
+    const loadContactDetails = async () => {
+      try {
+        const response = await fetch("/api/settings/public")
+        if (!response.ok) return
+
+        const data = await response.json()
+        const settings = data.settings || {}
+
+        const phone = settings.orgPhone || "+91 99999-00000"
+        const email = settings.orgEmail || "SurakshaCharitableTrust@gmail.com"
+        const address = settings.orgAddress || "Suraksha Charitable Trust, India"
+        const workingHours = settings.workingHours || "Mon - Sat: 9:00 AM - 6:00 PM"
+        const sanitizedPhone = String(phone).replace(/[^\d+]/g, "")
+
+        if (!mounted) return
+
+        setContactDetails([
+          {
+            icon: Phone,
+            title: "Phone",
+            value: phone,
+            href: `tel:${sanitizedPhone}`,
+          },
+          {
+            icon: Mail,
+            title: "Email",
+            value: email,
+            href: `mailto:${email}`,
+          },
+          {
+            icon: MapPin,
+            title: "Address",
+            value: address,
+            href: null,
+          },
+          {
+            icon: Clock,
+            title: "Working Hours",
+            value: workingHours,
+            href: null,
+          },
+        ])
+      } catch {
+        return
+      }
+    }
+
+    loadContactDetails()
 
     return () => {
       mounted = false

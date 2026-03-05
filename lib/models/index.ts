@@ -8,6 +8,9 @@ export { default as Certificate } from "./Certificate";
 export { default as ContactInquiry } from "./ContactInquiry";
 export { default as OTP } from "./OTP";
 export { default as TrustDocument } from "./TrustDocument";
+export { default as CSRProject } from "./CSRProject";
+export { default as CorporateSponsor } from "./CorporateSponsor";
+export { default as CSRPledge } from "./CSRPledge";
 
 export type { IUser } from "./User";
 export type { IDonor } from "./Donor";
@@ -19,3 +22,6 @@ export type { ICertificate } from "./Certificate";
 export type { IContactInquiry } from "./ContactInquiry";
 export type { IOTP } from "./OTP";
 export type { ITrustDocument } from "./TrustDocument";
+export type { ICSRProject } from "./CSRProject";
+export type { ICorporateSponsor } from "./CorporateSponsor";
+export type { ICSRPledge } from "./CSRPledge";

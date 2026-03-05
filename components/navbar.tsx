@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
-import { Menu, Phone, Mail, ArrowRight } from "lucide-react"
+import { Menu, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -19,6 +19,7 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About Us" },
   { href: "/what-we-do", label: "What We Do" },
+  { href: "/adopt-project", label: "CSR Openings" },
   { href: "/gallery", label: "Gallery" },
   { href: "/contact", label: "Contact" },
 ]
@@ -29,20 +30,6 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border">
-      {/* Top bar with contact info */}
-      <div className="hidden md:block bg-primary">
-        <div className="mx-auto flex max-w-7xl items-center justify-end gap-6 px-6 py-1.5 text-xs text-primary-foreground/80">
-          <a href="tel:+919999900000" className="flex items-center gap-1.5 hover:text-primary-foreground transition-colors">
-            <Phone className="size-3" />
-            +91 99999-00000
-          </a>
-          <a href="mailto:SurakshaCharitableTrust@gmail.com" className="flex items-center gap-1.5 hover:text-primary-foreground transition-colors">
-            <Mail className="size-3" />
-            SurakshaCharitableTrust@gmail.com
-          </a>
-        </div>
-      </div>
-
       {/* Main navbar */}
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
         {/* Logo */}
@@ -142,14 +129,6 @@ export function Navbar() {
                 </Button>
               </div>
             </nav>
-            <div className="mt-auto border-t border-border px-4 py-4 text-xs text-muted-foreground">
-              <a href="tel:+919999900000" className="flex items-center gap-2 mb-2">
-                <Phone className="size-3" /> +91 99999-00000
-              </a>
-              <a href="mailto:SurakshaCharitableTrust@gmail.com" className="flex items-center gap-2">
-                <Mail className="size-3" /> SurakshaCharitableTrust@gmail.com
-              </a>
-            </div>
           </SheetContent>
         </Sheet>
       </div>

@@ -39,6 +39,13 @@ export async function GET(request: Request) {
       query.status = params.status;
     }
 
+    const requires80G = searchParams.get("requires80G");
+    if (requires80G === "true") {
+      query.requires80G = true;
+    } else if (requires80G === "false") {
+      query.requires80G = false;
+    }
+
     // Date range filter
     const from = searchParams.get("from");
     const to = searchParams.get("to");
@@ -111,6 +118,13 @@ export async function POST(request: Request) {
       .toUpperCase()}`;
 
     // Create donation record
+    const donationNotes = [
+      validated.notes,
+      validated.requires80G ? "80G certificate requested" : undefined,
+    ]
+      .filter(Boolean)
+      .join(" | ");
+
     const donation = await Donation.create({
       donorId: donor._id,
       donorName: validated.donorName,
@@ -118,9 +132,10 @@ export async function POST(request: Request) {
       donorPhone: validated.donorPhone,
       amount: validated.amount,
       method: validated.method,
+      requires80G: validated.requires80G || false,
       status: "pending",
       transactionId,
-      notes: validated.notes,
+      notes: donationNotes || undefined,
     });
 
     return NextResponse.json(

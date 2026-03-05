@@ -44,6 +44,7 @@ export default function DonatePage() {
   const [step, setStep] = useState<DonationStep>("select")
   const [amount, setAmount] = useState<number | null>(1000)
   const [customAmount, setCustomAmount] = useState("")
+  const [requires80G, setRequires80G] = useState(false)
   const [donorInfo, setDonorInfo] = useState({
     name: "",
     email: "",
@@ -53,6 +54,7 @@ export default function DonatePage() {
   const [donationId, setDonationId] = useState("")
 
   const selectedAmount = customAmount ? parseInt(customAmount) : amount
+  const minimumAmount = requires80G ? 5000 : 100
 
   const handleAmountSelect = (value: number) => {
     setAmount(value)
@@ -64,13 +66,22 @@ export default function DonatePage() {
     if (value) setAmount(null)
   }
 
+  const handleRequires80GChange = (checked: boolean) => {
+    setRequires80G(checked)
+
+    if (checked && (!selectedAmount || selectedAmount < 5000)) {
+      setAmount(5000)
+      setCustomAmount("5000")
+    }
+  }
+
   const handleProceed = () => {
-    if (!selectedAmount || selectedAmount < 100) return
+    if (!selectedAmount || selectedAmount < minimumAmount) return
     setStep("details")
   }
 
   const handlePayment = async () => {
-    if (!donorInfo.name || !donorInfo.email || !selectedAmount) return
+    if (!donorInfo.name || !donorInfo.email || !selectedAmount || selectedAmount < minimumAmount) return
     try {
       setStep("processing")
 
@@ -82,7 +93,9 @@ export default function DonatePage() {
           donorEmail: donorInfo.email,
           donorPhone: donorInfo.phone,
           amount: selectedAmount,
+          requires80G,
           method: "other",
+          notes: requires80G ? "80G certificate requested" : undefined,
         }),
       })
 
@@ -194,6 +207,7 @@ export default function DonatePage() {
     setStep("select")
     setAmount(1000)
     setCustomAmount("")
+    setRequires80G(false)
     setDonorInfo({ name: "", email: "", phone: "" })
     setTxnId("")
     setDonationId("")
@@ -441,6 +455,18 @@ export default function DonatePage() {
                 />
               </div>
 
+              <label className="flex items-start gap-3 rounded-lg border border-border bg-muted/40 p-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={requires80G}
+                  onChange={(event) => handleRequires80GChange(event.target.checked)}
+                  className="mt-0.5"
+                />
+                <span className="text-muted-foreground">
+                  I require an 80G tax certificate (Minimum donation ₹5,000)
+                </span>
+              </label>
+
               <div className="mt-2 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Lock className="size-3.5 shrink-0" />
@@ -508,17 +534,33 @@ export default function DonatePage() {
                       <button
                         key={value}
                         onClick={() => handleAmountSelect(value)}
+                        disabled={requires80G && value < 5000}
                         className={cn(
                           "rounded-lg border-2 px-4 py-3 text-center font-semibold transition-all",
                           amount === value && !customAmount
                             ? "border-accent bg-accent/10 text-accent-foreground"
-                            : "border-border bg-card text-foreground hover:border-accent/50"
+                            : "border-border bg-card text-foreground hover:border-accent/50",
+                          requires80G && value < 5000
+                            ? "cursor-not-allowed opacity-40 hover:border-border"
+                            : ""
                         )}
                       >
                         {"₹"} {value.toLocaleString("en-IN")}
                       </button>
                     ))}
                   </div>
+
+                  <label className="flex items-start gap-3 rounded-lg border border-border bg-muted/40 p-3 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={requires80G}
+                      onChange={(event) => handleRequires80GChange(event.target.checked)}
+                      className="mt-0.5"
+                    />
+                    <span className="text-muted-foreground">
+                      I require an 80G tax certificate (Minimum donation ₹5,000)
+                    </span>
+                  </label>
 
                   {/* Custom amount */}
                   <div className="flex flex-col gap-2">
@@ -528,8 +570,8 @@ export default function DonatePage() {
                       <Input
                         id="custom-amount"
                         type="number"
-                        min={100}
-                        placeholder="Enter amount (min ₹100)"
+                        min={minimumAmount}
+                        placeholder={`Enter amount (min ₹${minimumAmount.toLocaleString("en-IN")})`}
                         className="pl-9"
                         value={customAmount}
                         onChange={(e) =>
@@ -556,7 +598,7 @@ export default function DonatePage() {
                     size="lg"
                     className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
                     onClick={handleProceed}
-                    disabled={!selectedAmount || selectedAmount < 100}
+                    disabled={!selectedAmount || selectedAmount < minimumAmount}
                   >
                     Proceed to Donate
                   </Button>

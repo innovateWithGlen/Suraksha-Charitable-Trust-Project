@@ -7,6 +7,7 @@ export interface IDonation extends Document {
   donorPhone: string;
   amount: number;
   method: "upi" | "card" | "netbanking" | "wallet" | "other";
+  requires80G: boolean;
   status: "pending" | "completed" | "failed" | "refunded";
   transactionId: string;
   razorpayOrderId?: string;
@@ -31,6 +32,7 @@ const DonationSchema = new Schema<IDonation>(
       enum: ["upi", "card", "netbanking", "wallet", "other"],
       default: "other",
     },
+    requires80G: { type: Boolean, default: false },
     status: {
       type: String,
       enum: ["pending", "completed", "failed", "refunded"],

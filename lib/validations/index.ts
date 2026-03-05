@@ -38,8 +38,17 @@ export const donationSchema = z.object({
   donorEmail: z.string().email(),
   donorPhone: z.string().min(10),
   amount: z.number().min(100, "Minimum donation is ₹100"),
+  requires80G: z.boolean().optional().default(false),
   method: z.enum(["upi", "card", "netbanking", "wallet", "other"]).default("other"),
   notes: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.requires80G && data.amount < 5000) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["amount"],
+      message: "Minimum donation is ₹5,000 when 80G certificate is requested",
+    });
+  }
 });
 
 export const donationUpdateSchema = z.object({
@@ -101,6 +110,47 @@ export const settingsUpdateSchema = z.object({
       description: z.string().optional(),
     })
   ),
+});
+
+export const csrProjectSchema = z.object({
+  title: z.string().min(3, "Title is required"),
+  description: z.string().min(10, "Description is required"),
+  category: z.enum(["Health", "Education", "Empowerment", "Environment"]),
+  goalAmount: z.number().min(1, "Goal amount must be greater than 0"),
+  raisedAmount: z.number().min(0).optional().default(0),
+  coverImageUrl: z.string().url().optional().or(z.literal("")),
+  status: z.enum(["Open", "Funded", "Closed"]).default("Open"),
+  fiscalYear: z.string().optional().default("2025-26"),
+  livesImpacted: z.number().min(0).optional().default(0),
+  beneficiariesCount: z.number().min(0).optional().default(0),
+  location: z.string().optional(),
+  isFeatured: z.boolean().optional().default(false),
+  csr1Tracking: z.string().optional().default("CSR-1 Registered"),
+  sponsoringCompanies: z.array(z.string()).optional().default([]),
+});
+
+export const csrProjectUpdateSchema = csrProjectSchema.partial();
+
+export const corporateSponsorSchema = z.object({
+  companyName: z.string().min(2),
+  totalContributed: z.number().min(0).default(0),
+  logoUrl: z.string().url().optional().or(z.literal("")),
+  fiscalYear: z.string().optional().default("2025-26"),
+  isActive: z.boolean().optional().default(true),
+});
+
+export const csrPledgeSchema = z.object({
+  projectId: z.string().min(1),
+  companyName: z.string().min(2),
+  amount: z.number().min(1),
+  status: z
+    .enum(["pledged", "confirmed", "cancelled"])
+    .optional()
+    .default("pledged"),
+  contactName: z.string().optional(),
+  contactEmail: z.string().email().optional().or(z.literal("")),
+  notes: z.string().optional(),
+  fiscalYear: z.string().optional().default("2025-26"),
 });
 
 // Certificate schemas
