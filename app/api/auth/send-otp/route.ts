@@ -6,6 +6,11 @@ import User from "@/lib/models/User";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const resendFromEmail =
+  process.env.RESEND_FROM_EMAIL || "Suraksha Trust <onboarding@resend.dev>";
+const allowedAdminEmail = (
+  process.env.ADMIN_EMAIL || "glenmonteiro47@gmail.com"
+).toLowerCase();
 
 export async function POST(request: Request) {
   try {
@@ -18,10 +23,18 @@ export async function POST(request: Request) {
       );
     }
 
+    const normalizedEmail = email.toLowerCase();
+    if (normalizedEmail !== allowedAdminEmail) {
+      return NextResponse.json(
+        { error: "This email is not allowed for admin login" },
+        { status: 403 }
+      );
+    }
+
     await dbConnect();
 
     // Check if user exists and is an admin
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       return NextResponse.json(
         { error: "No admin account found with this email" },
@@ -32,7 +45,7 @@ export async function POST(request: Request) {
     // Rate limit: max 3 OTPs per email per hour
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     const recentOTPs = await OTP.countDocuments({
-      email: email.toLowerCase(),
+      email: normalizedEmail,
       createdAt: { $gt: oneHourAgo },
     });
 
@@ -48,18 +61,18 @@ export async function POST(request: Request) {
     const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
 
     // Delete any existing OTPs for this email
-    await OTP.deleteMany({ email: email.toLowerCase() });
+    await OTP.deleteMany({ email: normalizedEmail });
 
     // Save hashed OTP with 5-minute expiry
     await OTP.create({
-      email: email.toLowerCase(),
+      email: normalizedEmail,
       otp: hashedOtp,
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     });
 
     // Send OTP via email
-    await resend.emails.send({
-      from: "Suraksha Trust <noreply@glenmonteiro47@gmail.com>",
+    const resendResponse = await resend.emails.send({
+      from: resendFromEmail,
       to: email,
       subject: "Your Login OTP - Suraksha Charitable Trust",
       html: `
@@ -83,6 +96,17 @@ export async function POST(request: Request) {
         </div>
       `,
     });
+
+    if ((resendResponse as any)?.error) {
+      console.error("Resend OTP delivery error:", (resendResponse as any).error);
+      return NextResponse.json(
+        {
+          error:
+            "OTP email delivery failed. Verify RESEND_FROM_EMAIL/domain in Resend.",
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ message: "OTP sent successfully" });
   } catch (error) {

@@ -2,7 +2,8 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM_EMAIL = "Suraksha Trust <noreply@surakshatrust.org>";
+const FROM_EMAIL =
+  process.env.RESEND_FROM_EMAIL || "Suraksha Trust <onboarding@resend.dev>";
 
 export async function sendDonationConfirmation(
   donor: { name: string; email: string },

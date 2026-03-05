@@ -7,6 +7,10 @@ import User from "@/lib/models/User";
 import OTP from "@/lib/models/OTP";
 import crypto from "crypto";
 
+const allowedAdminEmail = (
+  process.env.ADMIN_EMAIL || "glenmonteiro47@gmail.com"
+).toLowerCase();
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   pages: {
     signIn: "/admin/login",
@@ -32,10 +36,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           throw new Error("Email and password are required");
         }
 
+        const email = (credentials.email as string).toLowerCase();
+        if (email !== allowedAdminEmail) {
+          throw new Error("This email is not allowed for admin login");
+        }
+
         await dbConnect();
 
         const user = await User.findOne({
-          email: (credentials.email as string).toLowerCase(),
+          email,
         });
 
         if (!user || !user.password) {
@@ -73,6 +82,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           throw new Error("Email and OTP are required");
         }
 
+        const email = (credentials.email as string).toLowerCase();
+        if (email !== allowedAdminEmail) {
+          throw new Error("This email is not allowed for admin login");
+        }
+
         await dbConnect();
 
         const hashedOtp = crypto
@@ -81,7 +95,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           .digest("hex");
 
         const otpRecord = await OTP.findOne({
-          email: (credentials.email as string).toLowerCase(),
+          email,
           otp: hashedOtp,
           expiresAt: { $gt: new Date() },
         });
@@ -92,11 +106,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         // Delete used OTP
         await OTP.deleteMany({
-          email: (credentials.email as string).toLowerCase(),
+          email,
         });
 
         const user = await User.findOne({
-          email: (credentials.email as string).toLowerCase(),
+          email,
         });
 
         if (!user) {
@@ -115,6 +129,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   callbacks: {
     async signIn({ user, account }) {
+      if (!user.email || user.email.toLowerCase() !== allowedAdminEmail) {
+        return false;
+      }
+
       if (account?.provider === "google") {
         await dbConnect();
 
