@@ -59,7 +59,7 @@ export async function POST(request: Request) {
 
     // Send OTP via email
     await resend.emails.send({
-      from: "Suraksha Trust <noreply@surakshatrust.org>",
+      from: "Suraksha Trust <noreply@glenmonteiro47@gmail.com>",
       to: email,
       subject: "Your Login OTP - Suraksha Charitable Trust",
       html: `
