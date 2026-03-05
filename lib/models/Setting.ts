@@ -22,7 +22,6 @@ const SettingSchema = new Schema<ISetting>(
   { timestamps: true }
 );
 
-SettingSchema.index({ key: 1 });
 SettingSchema.index({ category: 1 });
 
 const Setting: Model<ISetting> =

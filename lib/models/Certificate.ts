@@ -37,7 +37,6 @@ const CertificateSchema = new Schema<ICertificate>(
 
 CertificateSchema.index({ donationId: 1 });
 CertificateSchema.index({ donorId: 1 });
-CertificateSchema.index({ certificateNumber: 1 });
 
 const Certificate: Model<ICertificate> =
   mongoose.models.Certificate ||
