@@ -1,34 +1,14 @@
 "use client"
 
-import { useState, useRef } from "react"
-import {
-  Plus,
-  Trash2,
-  Upload,
-  ImageIcon,
-  Calendar,
-  MapPin,
-  X,
-  Save,
-  Eye,
-} from "lucide-react"
+import { useMemo, useState } from "react"
+import useSWR, { mutate } from "swr"
+import Link from "next/link"
+import { Plus, Trash2, ImageIcon, X, Save, Eye, Pencil, Calendar, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Card, CardContent } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -39,89 +19,69 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import Link from "next/link"
+import { toast } from "sonner"
 
-interface GalleryEvent {
-  id: string
+type ApiGalleryEvent = {
+  _id: string
   title: string
-  category: string
+  category: "education" | "healthcare" | "environment" | "community" | "events" | "other"
   date: string
   location: string
-  images: string[]
+  description?: string
+  images: Array<{ url: string; caption?: string }>
+  isActive: boolean
 }
 
+const fetcher = (url: string) => fetch(url).then((r) => r.json())
+
 const categoryOptions = [
-  "Education",
-  "Healthcare",
-  "Environment",
-  "Women Empowerment",
-  "Child Welfare",
-]
+  { value: "education", label: "Education" },
+  { value: "healthcare", label: "Healthcare" },
+  { value: "environment", label: "Environment" },
+  { value: "community", label: "Community" },
+  { value: "events", label: "Events" },
+  { value: "other", label: "Other" },
+] as const
 
 const categoryColors: Record<string, string> = {
-  Education: "bg-blue-100 text-blue-800",
-  Healthcare: "bg-rose-100 text-rose-800",
-  Environment: "bg-emerald-100 text-emerald-800",
-  "Women Empowerment": "bg-amber-100 text-amber-800",
-  "Child Welfare": "bg-indigo-100 text-indigo-800",
+  education: "bg-blue-100 text-blue-800",
+  healthcare: "bg-rose-100 text-rose-800",
+  environment: "bg-emerald-100 text-emerald-800",
+  community: "bg-amber-100 text-amber-800",
+  events: "bg-indigo-100 text-indigo-800",
+  other: "bg-slate-100 text-slate-700",
 }
 
 export default function AdminGalleryPage() {
-  const [events, setEvents] = useState<GalleryEvent[]>([
-    {
-      id: "1",
-      title: "Annual Education Drive 2025",
-      category: "Education",
-      date: "2025-03-15",
-      location: "Andheri, Mumbai",
-      images: [
-        "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600&q=80",
-        "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=600&q=80",
-      ],
-    },
-    {
-      id: "2",
-      title: "Free Health Camp - Thane",
-      category: "Healthcare",
-      date: "2025-04-10",
-      location: "Thane, Maharashtra",
-      images: [
-        "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&q=80",
-      ],
-    },
-    {
-      id: "3",
-      title: "Tree Plantation Drive",
-      category: "Environment",
-      date: "2025-06-05",
-      location: "Sanjay Gandhi National Park",
-      images: [
-        "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&q=80",
-        "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&q=80",
-        "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=600&q=80",
-      ],
-    },
-  ])
+  const { data, isLoading } = useSWR("/api/gallery?active=false", fetcher, { refreshInterval: 5000 })
+  const events: ApiGalleryEvent[] = data?.events || []
 
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [editingEvent, setEditingEvent] = useState<GalleryEvent | null>(null)
-  const [saved, setSaved] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [editingEventId, setEditingEventId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
-  // Form state
   const [formTitle, setFormTitle] = useState("")
-  const [formCategory, setFormCategory] = useState("")
+  const [formCategory, setFormCategory] = useState<ApiGalleryEvent["category"] | "">("")
   const [formDate, setFormDate] = useState("")
   const [formLocation, setFormLocation] = useState("")
+  const [formDescription, setFormDescription] = useState("")
+  const [formImageUrl, setFormImageUrl] = useState("")
   const [formImages, setFormImages] = useState<string[]>([])
+
+  const editingEvent = useMemo(
+    () => events.find((event) => event._id === editingEventId) || null,
+    [events, editingEventId]
+  )
 
   const resetForm = () => {
     setFormTitle("")
     setFormCategory("")
     setFormDate("")
     setFormLocation("")
+    setFormDescription("")
+    setFormImageUrl("")
     setFormImages([])
-    setEditingEvent(null)
+    setEditingEventId(null)
   }
 
   const openCreateDialog = () => {
@@ -129,82 +89,94 @@ export default function AdminGalleryPage() {
     setDialogOpen(true)
   }
 
-  const openEditDialog = (event: GalleryEvent) => {
-    setEditingEvent(event)
+  const openEditDialog = (event: ApiGalleryEvent) => {
+    setEditingEventId(event._id)
     setFormTitle(event.title)
     setFormCategory(event.category)
-    setFormDate(event.date)
+    setFormDate(new Date(event.date).toISOString().slice(0, 10))
     setFormLocation(event.location)
-    setFormImages([...event.images])
+    setFormDescription(event.description || "")
+    setFormImages(event.images.map((image) => image.url))
+    setFormImageUrl("")
     setDialogOpen(true)
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (!files) return
-    // Simulate upload - in production this would upload to storage
-    const newImages: string[] = []
-    Array.from(files).forEach((file) => {
-      const url = URL.createObjectURL(file)
-      newImages.push(url)
-    })
-    setFormImages([...formImages, ...newImages])
-    if (fileInputRef.current) fileInputRef.current.value = ""
+  const addImageUrl = () => {
+    const url = formImageUrl.trim()
+    if (!url) return
+
+    try {
+      new URL(url)
+      setFormImages((prev) => [...prev, url])
+      setFormImageUrl("")
+    } catch {
+      toast.error("Enter a valid image URL")
+    }
   }
 
   const removeImage = (index: number) => {
-    setFormImages(formImages.filter((_, i) => i !== index))
+    setFormImages((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const saveEvent = () => {
-    if (!formTitle || !formCategory || !formDate || !formLocation) return
-
-    if (editingEvent) {
-      setEvents(
-        events.map((ev) =>
-          ev.id === editingEvent.id
-            ? {
-                ...ev,
-                title: formTitle,
-                category: formCategory,
-                date: formDate,
-                location: formLocation,
-                images: formImages,
-              }
-            : ev
-        )
-      )
-    } else {
-      const newEvent: GalleryEvent = {
-        id: Date.now().toString(),
-        title: formTitle,
-        category: formCategory,
-        date: formDate,
-        location: formLocation,
-        images: formImages,
-      }
-      setEvents([newEvent, ...events])
+  const saveEvent = async () => {
+    if (!formTitle || !formCategory || !formDate || !formLocation) {
+      toast.error("Please fill required fields")
+      return
     }
 
-    setDialogOpen(false)
-    resetForm()
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    const payload = {
+      title: formTitle,
+      category: formCategory,
+      date: formDate,
+      location: formLocation,
+      description: formDescription || undefined,
+      images: formImages.map((url) => ({ url })),
+      isActive: true,
+    }
+
+    setSaving(true)
+    try {
+      const res = await fetch(editingEvent ? `/api/gallery/${editingEvent._id}` : "/api/gallery", {
+        method: editingEvent ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(result.error || "Failed to save gallery event")
+        return
+      }
+
+      toast.success(editingEvent ? "Event updated" : "Event created")
+      setDialogOpen(false)
+      resetForm()
+      mutate("/api/gallery?active=false")
+      mutate("/api/gallery?active=true")
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const deleteEvent = (id: string) => {
-    setEvents(events.filter((ev) => ev.id !== id))
+  const deleteEvent = async (id: string) => {
+    const res = await fetch(`/api/gallery/${id}`, { method: "DELETE" })
+    if (!res.ok) {
+      const result = await res.json().catch(() => ({}))
+      toast.error(result.error || "Failed to delete event")
+      return
+    }
+
+    toast.success("Event deleted")
+    mutate("/api/gallery?active=false")
+    mutate("/api/gallery?active=true")
   }
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Gallery Management</h1>
-          <p className="text-sm text-muted-foreground">
-            Upload images and manage events shown on the Gallery page
-          </p>
+          <p className="text-sm text-muted-foreground">Manage events shown on the public gallery page.</p>
         </div>
         <div className="flex items-center gap-3">
           <Button asChild variant="outline" size="sm" className="gap-1.5">
@@ -213,6 +185,7 @@ export default function AdminGalleryPage() {
               View Gallery
             </Link>
           </Button>
+
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={openCreateDialog} className="gap-1.5">
@@ -222,38 +195,27 @@ export default function AdminGalleryPage() {
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
               <DialogHeader>
-                <DialogTitle>
-                  {editingEvent ? "Edit Event" : "Add New Event"}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingEvent
-                    ? "Update the event details and images."
-                    : "Fill in the event details and upload images."}
-                </DialogDescription>
+                <DialogTitle>{editingEvent ? "Edit Event" : "Add New Event"}</DialogTitle>
+                <DialogDescription>All changes here are saved to database and shown publicly.</DialogDescription>
               </DialogHeader>
 
               <div className="flex flex-col gap-4 py-4">
                 <div>
                   <Label>Event Title</Label>
-                  <Input
-                    value={formTitle}
-                    onChange={(e) => setFormTitle(e.target.value)}
-                    placeholder="e.g. Annual Education Drive 2025"
-                    className="mt-1"
-                  />
+                  <Input value={formTitle} onChange={(e) => setFormTitle(e.target.value)} className="mt-1" />
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <Label>Category</Label>
-                    <Select value={formCategory} onValueChange={setFormCategory}>
+                    <Select value={formCategory} onValueChange={(value) => setFormCategory(value as ApiGalleryEvent["category"])}>
                       <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
                         {categoryOptions.map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat}
+                          <SelectItem key={cat.value} value={cat.value}>
+                            {cat.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -261,78 +223,49 @@ export default function AdminGalleryPage() {
                   </div>
                   <div>
                     <Label>Date</Label>
-                    <Input
-                      type="date"
-                      value={formDate}
-                      onChange={(e) => setFormDate(e.target.value)}
-                      className="mt-1"
-                    />
+                    <Input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} className="mt-1" />
                   </div>
                 </div>
 
                 <div>
                   <Label>Location</Label>
-                  <Input
-                    value={formLocation}
-                    onChange={(e) => setFormLocation(e.target.value)}
-                    placeholder="e.g. Andheri, Mumbai"
-                    className="mt-1"
-                  />
+                  <Input value={formLocation} onChange={(e) => setFormLocation(e.target.value)} className="mt-1" />
                 </div>
 
-                {/* Image upload area */}
                 <div>
-                  <Label>Images</Label>
-                  <div className="mt-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      id="gallery-upload"
+                  <Label>Description (optional)</Label>
+                  <Input value={formDescription} onChange={(e) => setFormDescription(e.target.value)} className="mt-1" />
+                </div>
+
+                <div>
+                  <Label>Add Image URL</Label>
+                  <div className="mt-1 flex gap-2">
+                    <Input
+                      value={formImageUrl}
+                      onChange={(e) => setFormImageUrl(e.target.value)}
+                      placeholder="https://..."
                     />
-                    <label
-                      htmlFor="gallery-upload"
-                      className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border p-6 text-center transition-colors hover:border-secondary hover:bg-muted/50"
-                    >
-                      <Upload className="size-8 text-muted-foreground" />
-                      <span className="text-sm font-medium text-muted-foreground">
-                        Click to upload images
-                      </span>
-                      <span className="text-xs text-muted-foreground/60">
-                        PNG, JPG, WEBP up to 5MB each
-                      </span>
-                    </label>
+                    <Button type="button" variant="outline" onClick={addImageUrl}>
+                      Add
+                    </Button>
                   </div>
 
-                  {/* Image preview grid */}
-                  {formImages.length > 0 && (
-                    <div className="mt-4 grid grid-cols-3 gap-3">
+                  {formImages.length > 0 ? (
+                    <div className="mt-3 grid grid-cols-3 gap-3">
                       {formImages.map((img, idx) => (
-                        <div
-                          key={idx}
-                          className="group relative aspect-square overflow-hidden rounded-lg border border-border"
-                        >
-                          <img
-                            src={img}
-                            alt={`Upload ${idx + 1}`}
-                            className="size-full object-cover"
-                            crossOrigin="anonymous"
-                          />
+                        <div key={idx} className="group relative aspect-square overflow-hidden rounded-lg border border-border">
+                          <img src={img} alt={`Event image ${idx + 1}`} className="size-full object-cover" />
                           <button
                             type="button"
                             onClick={() => removeImage(idx)}
                             className="absolute right-1 top-1 rounded-full bg-destructive p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                            aria-label="Remove image"
                           >
                             <X className="size-3" />
                           </button>
                         </div>
                       ))}
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
 
@@ -340,13 +273,9 @@ export default function AdminGalleryPage() {
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  onClick={saveEvent}
-                  disabled={!formTitle || !formCategory || !formDate || !formLocation}
-                  className="gap-1.5"
-                >
+                <Button onClick={saveEvent} disabled={saving} className="gap-1.5">
                   <Save className="size-4" />
-                  {editingEvent ? "Update Event" : "Create Event"}
+                  {saving ? "Saving..." : editingEvent ? "Update Event" : "Create Event"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -354,23 +283,18 @@ export default function AdminGalleryPage() {
         </div>
       </div>
 
-      {saved && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-          Event saved successfully!
-        </div>
-      )}
-
-      {/* Events list */}
       <div className="grid gap-4">
-        {events.length === 0 ? (
+        {isLoading ? (
+          <Card>
+            <CardContent className="py-10 text-center text-sm text-muted-foreground">Loading events...</CardContent>
+          </Card>
+        ) : events.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
               <ImageIcon className="size-12 text-muted-foreground/30" />
               <div>
                 <p className="font-medium text-foreground">No events yet</p>
-                <p className="text-sm text-muted-foreground">
-                  Add your first event to get started.
-                </p>
+                <p className="text-sm text-muted-foreground">Add your first event to get started.</p>
               </div>
               <Button onClick={openCreateDialog} className="gap-1.5">
                 <Plus className="size-4" />
@@ -380,102 +304,45 @@ export default function AdminGalleryPage() {
           </Card>
         ) : (
           events.map((event) => (
-            <Card key={event.id} className="overflow-hidden">
+            <Card key={event._id} className="overflow-hidden">
               <div className="flex flex-col sm:flex-row">
-                {/* Thumbnail */}
                 <div className="relative aspect-video w-full shrink-0 sm:aspect-square sm:w-40">
-                  {event.images.length > 0 ? (
-                    <img
-                      src={event.images[0]}
-                      alt={event.title}
-                      className="size-full object-cover"
-                      crossOrigin="anonymous"
-                    />
+                  {event.images?.[0]?.url ? (
+                    <img src={event.images[0].url} alt={event.title} className="size-full object-cover" />
                   ) : (
                     <div className="flex size-full items-center justify-center bg-muted">
                       <ImageIcon className="size-8 text-muted-foreground/30" />
                     </div>
                   )}
-                  {event.images.length > 1 && (
-                    <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white">
-                      {event.images.length} photos
-                    </span>
-                  )}
                 </div>
 
-                {/* Info */}
                 <div className="flex flex-1 flex-col gap-2 p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex flex-col gap-1.5">
-                      <Badge
-                        variant="secondary"
-                        className={`w-fit text-xs ${categoryColors[event.category] || ""}`}
-                      >
-                        {event.category}
+                      <Badge variant="secondary" className={`w-fit text-xs ${categoryColors[event.category] || ""}`}>
+                        {categoryOptions.find((c) => c.value === event.category)?.label || event.category}
                       </Badge>
-                      <h3 className="text-lg font-semibold text-foreground">
-                        {event.title}
-                      </h3>
+                      <h3 className="text-lg font-semibold text-foreground">{event.title}</h3>
+                      <div className="space-y-1 text-xs text-muted-foreground">
+                        <p className="flex items-center gap-1">
+                          <Calendar className="size-3" />
+                          {new Date(event.date).toLocaleDateString("en-IN")}
+                        </p>
+                        <p className="flex items-center gap-1">
+                          <MapPin className="size-3" />
+                          {event.location}
+                        </p>
+                      </div>
                     </div>
                     <div className="flex shrink-0 gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEditDialog(event)}
-                        className="text-xs"
-                      >
-                        Edit
+                      <Button variant="outline" size="icon" onClick={() => openEditDialog(event)}>
+                        <Pencil className="size-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteEvent(event.id)}
-                        className="size-8 text-destructive hover:text-destructive"
-                      >
+                      <Button variant="destructive" size="icon" onClick={() => deleteEvent(event._id)}>
                         <Trash2 className="size-4" />
-                        <span className="sr-only">Delete</span>
                       </Button>
                     </div>
                   </div>
-
-                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <Calendar className="size-3.5" />
-                      {new Date(event.date).toLocaleDateString("en-IN", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <MapPin className="size-3.5" />
-                      {event.location}
-                    </span>
-                  </div>
-
-                  {/* Image thumbnails */}
-                  {event.images.length > 0 && (
-                    <div className="mt-auto flex gap-2 pt-2">
-                      {event.images.slice(0, 5).map((img, idx) => (
-                        <div
-                          key={idx}
-                          className="relative size-10 shrink-0 overflow-hidden rounded border border-border"
-                        >
-                          <img
-                            src={img}
-                            alt={`${event.title} ${idx + 1}`}
-                            className="size-full object-cover"
-                            crossOrigin="anonymous"
-                          />
-                        </div>
-                      ))}
-                      {event.images.length > 5 && (
-                        <div className="flex size-10 items-center justify-center rounded border border-border bg-muted text-xs text-muted-foreground">
-                          +{event.images.length - 5}
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
             </Card>

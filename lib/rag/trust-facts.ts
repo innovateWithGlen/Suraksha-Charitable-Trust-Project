@@ -6,6 +6,12 @@ export const TRUST_FACTS = {
   urn12A: "22AAATS0000A1Z1",
   pan: "AABTS0000X",
   validity: "Assessment Years 2023-24 to 2027-28.",
+  settlor: "Mr. Rajesh Hegde",
+  trustees: [
+    "Mr. Rajesh Hegde (Managing Trustee)",
+    "Mrs. Lakshmi Bhat",
+    "Dr. Kiran Nayak"
+  ],
   initiatives: [
     "Women Skill Development Workshop",
     "Child Nutrition Program",
@@ -18,10 +24,12 @@ export const TRUST_MISSION =
 
 export function buildAuthoritativeContext(): string {
   return [
-    "[Official Trust Facts]",
+    "[Official Trust Facts Summary]",
     `Assistant Name: ${TRUST_FACTS.assistantName}`,
     `Trust Name: ${TRUST_FACTS.trustName}`,
     `Location: ${TRUST_FACTS.location}`,
+    `Settlor (Founder): ${TRUST_FACTS.settlor}`,
+    `Board of Trustees: ${TRUST_FACTS.trustees.join(", ")}`,
     `80G URN: ${TRUST_FACTS.urn80G}`,
     `12A URN: ${TRUST_FACTS.urn12A}`,
     `PAN: ${TRUST_FACTS.pan}`,

@@ -10,9 +10,7 @@ type ScoredChunk = {
 
 function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) return -1;
-  let dot = 0;
-  let normA = 0;
-  let normB = 0;
+  let dot = 0, normA = 0, normB = 0;
   for (let i = 0; i < a.length; i += 1) {
     dot += a[i] * b[i];
     normA += a[i] * a[i];
@@ -24,24 +22,19 @@ function cosineSimilarity(a: number[], b: number[]): number {
 
 function normalizeQuery(query: string): string {
   const q = query.toLowerCase();
-  if (/\b80g\b/.test(q)) {
-    return `${query} tax deduction certificate form 10be donation eligibility`;
-  }
-  if (/\b12a\b|10ac/.test(q)) {
-    return `${query} registration form 10ac section 12ab urn`; 
-  }
-  if (/csr-?1|csr/.test(q)) {
-    return `${query} csr-1 registration number certificate`; 
+  if (/\b80g\b/.test(q)) return `${query} tax deduction certificate form 10be donation eligibility`;
+  if (/\b12a\b|10ac/.test(q)) return `${query} registration form 10ac section 12ab urn`; 
+  if (/csr-?1|csr/.test(q)) return `${query} csr-1 registration number certificate`; 
+  
+  // New: Map generic ownership questions to legal trust terms
+  if (/own|founder|trustee|settlor|manage|who/.test(q)) {
+    return `${query} settlor managing trustee board of trustees names members`;
   }
   return query;
 }
 
 function tokenize(text: string): string[] {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, " ")
-    .split(/\s+/)
-    .filter((token) => token.length > 1);
+  return text.toLowerCase().replace(/[^a-z0-9\s-]/g, " ").split(/\s+/).filter((token) => token.length > 1);
 }
 
 function lexicalScore(query: string, chunkText: string, title: string): number {
@@ -62,7 +55,7 @@ function blendScore(semantic: number, lexical: number): number {
   return semanticSafe * 0.7 + lexical * 0.3;
 }
 
-export async function retrieveRelevantChunks(query: string, topK = 5) {
+export async function retrieveRelevantChunks(query: string, topK = 8) { // Increased topK
   await dbConnect();
   const normalizedQuery = normalizeQuery(query);
   const queryEmbedding = await createEmbedding(normalizedQuery);
@@ -86,7 +79,8 @@ export async function retrieveRelevantChunks(query: string, topK = 5) {
 
   for (const item of sorted) {
     const count = limitedPerSource.get(item.title) || 0;
-    if (count >= 2) continue;
+    // Increased limit per source from 2 to 4 to capture more from the Trust Deed
+    if (count >= 4) continue; 
     diversified.push(item);
     limitedPerSource.set(item.title, count + 1);
     if (diversified.length >= topK) break;
