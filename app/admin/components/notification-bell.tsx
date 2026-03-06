@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import useSWR, { mutate } from "swr";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,23 +49,42 @@ export function NotificationBell() {
     router.push(item.targetUrl);
   };
 
+  const clearAll = async () => {
+    await fetch("/api/notifications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "clearAll" }),
+    });
+
+    await mutate("/api/notifications");
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="size-4" />
           {unreadCount > 0 ? (
-            <span className="absolute -right-1 -top-1">
-              <Badge className="h-5 min-w-5 rounded-full px-1.5 text-[10px] leading-none bg-destructive text-destructive-foreground hover:bg-destructive">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </Badge>
+            <span className="absolute -right-0.5 -top-0.5 flex">
+              <span className="size-2 rounded-full bg-destructive" />
             </span>
           ) : null}
           <span className="sr-only">Notifications</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
-        <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+        <DropdownMenuLabel className="flex items-center justify-between gap-2">
+          <span>Notifications</span>
+          {unreadCount > 0 ? (
+            <button
+              type="button"
+              onClick={clearAll}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              Clear all
+            </button>
+          ) : null}
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {notifications.length === 0 ? (
           <div className="px-3 py-6 text-center text-sm text-muted-foreground">

@@ -20,7 +20,11 @@ export default function DonationsPage() {
   const query = useMemo(() => {
     const params = new URLSearchParams()
     if (search) params.set("search", search)
-    if (statusFilter !== "all") params.set("status", statusFilter)
+    if (statusFilter === "80g") {
+      params.set("requires80G", "true")
+    } else if (statusFilter !== "all") {
+      params.set("status", statusFilter)
+    }
     params.set("limit", "100")
     return `/api/donations?${params.toString()}`
   }, [search, statusFilter])
@@ -32,7 +36,7 @@ export default function DonationsPage() {
     const res = await fetch("/api/certificates/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ donationId, resendEmail: true }),
+      body: JSON.stringify({ donationId, resendEmail: false }),
     })
 
     const payload = await res.json().catch(() => ({}))
@@ -41,8 +45,13 @@ export default function DonationsPage() {
       return
     }
 
-    toast.success("80G receipt generated and sent")
+    if (payload?.warning) {
+      toast.warning("80G receipt generated and added to Tax Documentation. Email send failed; use Re-send.")
+    } else {
+      toast.success("80G receipt generated and added to Tax Documentation")
+    }
     mutate(query)
+    mutate("/api/certificates")
   }
 
   const resendReceipt = async (donationId: string) => {
@@ -134,6 +143,7 @@ export default function DonationsPage() {
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="failed">Failed</SelectItem>
                   <SelectItem value="refunded">Refunded</SelectItem>
+                  <SelectItem value="80g">80G Donor</SelectItem>
                 </SelectContent>
               </Select>
             </div>

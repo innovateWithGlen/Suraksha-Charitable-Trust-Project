@@ -9,9 +9,11 @@
     "lint": "eslint .",
     "seed": "tsx lib/seed.ts",
     "seed:demo": "tsx lib/seed-demo-data.ts",
-    "seed:csr": "tsx lib/seed-csr.ts"
+    "seed:csr": "tsx lib/seed-csr.ts",
+    "seed:docs": "tsx lib/seed-trust-docs.ts"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.43",
     "@ai-sdk/openai": "^3.0.39",
     "@ai-sdk/react": "^3.0.0",
     "@auth/mongodb-adapter": "^3.11.1",

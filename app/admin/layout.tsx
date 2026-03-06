@@ -38,7 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { NotificationBell } from "./components/notification-bell"
 
 const sidebarLinks = [
@@ -89,8 +89,13 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const { data: session } = useSession()
   const pathname = usePathname()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Don't show admin layout on login page
   if (pathname === "/admin/login") {
@@ -150,34 +155,46 @@ export default function AdminLayout({
         <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-card/95 backdrop-blur-sm px-4 py-3 md:px-6">
           <div className="flex items-center gap-3">
             {/* Mobile sidebar trigger */}
-            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-              <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="md:hidden"
-                  aria-label="Open menu"
-                >
-                  <Menu className="size-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0">
-                <SheetHeader className="border-b border-sidebar-border px-4 py-4">
-                  <SheetTitle className="flex items-center gap-2 text-sm">
-                    <Image
-                      src="/images/logo.png"
-                      alt="Suraksha Trust"
-                      width={24}
-                      height={24}
-                    />
-                    Suraksha Admin
-                  </SheetTitle>
-                </SheetHeader>
-                <div className="py-4">
-                  <SidebarNav onItemClick={() => setMobileOpen(false)} />
-                </div>
-              </SheetContent>
-            </Sheet>
+            {mounted ? (
+              <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="md:hidden"
+                    aria-label="Open menu"
+                  >
+                    <Menu className="size-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-64 p-0">
+                  <SheetHeader className="border-b border-sidebar-border px-4 py-4">
+                    <SheetTitle className="flex items-center gap-2 text-sm">
+                      <Image
+                        src="/images/logo.png"
+                        alt="Suraksha Trust"
+                        width={24}
+                        height={24}
+                      />
+                      Suraksha Admin
+                    </SheetTitle>
+                  </SheetHeader>
+                  <div className="py-4">
+                    <SidebarNav onItemClick={() => setMobileOpen(false)} />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                aria-label="Open menu"
+                disabled
+              >
+                <Menu className="size-5" />
+              </Button>
+            )}
 
             {/* Search */}
             <div className="hidden md:block relative">
@@ -190,53 +207,59 @@ export default function AdminLayout({
           </div>
 
           <div className="flex items-center gap-3">
-            <NotificationBell />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary">
-                  {session?.user?.image ? (
-                    <Image
-                      src={session.user.image}
-                      alt={userName}
-                      width={32}
-                      height={32}
-                      className="size-8 rounded-full"
-                    />
-                  ) : (
-                    <div className="flex size-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                      {userInitial}
-                    </div>
-                  )}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>
-                  <p className="font-medium">{userName}</p>
-                  <p className="text-xs text-muted-foreground font-normal">{userEmail}</p>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/admin/settings">
-                    <Settings className="size-4 mr-2" />
-                    Settings
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/">
-                    <ArrowLeft className="size-4 mr-2" />
-                    Back to Site
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => signOut({ callbackUrl: "/admin/login" })}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <LogOut className="size-4 mr-2" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {mounted ? <NotificationBell /> : <div className="size-9" aria-hidden="true" />}
+            {mounted ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary">
+                    {session?.user?.image ? (
+                      <Image
+                        src={session.user.image}
+                        alt={userName}
+                        width={32}
+                        height={32}
+                        className="size-8 rounded-full"
+                      />
+                    ) : (
+                      <div className="flex size-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                        {userInitial}
+                      </div>
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <p className="font-medium">{userName}</p>
+                    <p className="text-xs text-muted-foreground font-normal">{userEmail}</p>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/settings">
+                      <Settings className="size-4 mr-2" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/">
+                      <ArrowLeft className="size-4 mr-2" />
+                      Back to Site
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => signOut({ callbackUrl: "/admin/login" })}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <LogOut className="size-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex size-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                {userInitial}
+              </div>
+            )}
           </div>
         </header>
 

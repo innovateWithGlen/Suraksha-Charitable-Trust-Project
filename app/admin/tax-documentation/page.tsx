@@ -36,6 +36,17 @@ export default function TaxDocumentationPage() {
     mutate(query);
   };
 
+  const openManualEmail = (item: any) => {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    const receiptUrl = `${baseUrl}${item.pdfUrl}`;
+    const subject = `80G Receipt ${item.certificateNumber} | Suraksha Charitable Trust`;
+    const body =
+      `Dear ${item.donorName},\n\nPlease find your 80G receipt below:\n${receiptUrl}\n\nRegards,\nSuraksha Charitable Trust`
+    ;
+    const gmailCompose = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent("glenmonteiro47@gmail.com")}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(gmailCompose, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -110,6 +121,9 @@ export default function TaxDocumentationPage() {
                         <Button size="sm" variant="outline" onClick={() => resend(item._id)}>
                           <RefreshCw className="mr-1 size-3" />
                           Re-send
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => openManualEmail(item)}>
+                          Manual Email
                         </Button>
                       </div>
                     </TableCell>

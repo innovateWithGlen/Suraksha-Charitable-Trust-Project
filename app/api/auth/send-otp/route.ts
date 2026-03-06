@@ -8,9 +8,34 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 const resendFromEmail =
   process.env.RESEND_FROM_EMAIL || "Suraksha Trust <onboarding@resend.dev>";
+const testEmailInbox =
+  process.env.TEST_EMAIL_INBOX || process.env.DEMO_EMAIL_INBOX || "";
 const allowedAdminEmail = (
   process.env.ADMIN_EMAIL || "glenmonteiro47@gmail.com"
 ).toLowerCase();
+
+async function sendOtpWithFallback(payload: Parameters<typeof resend.emails.send>[0]) {
+  const primary = await resend.emails.send(payload);
+  if (!(primary as any)?.error) return primary;
+
+  const errorMessage = String((primary as any)?.error?.message || "").toLowerCase();
+  const blockedByResendTestMode =
+    errorMessage.includes("you can only send testing emails to your own email address") ||
+    errorMessage.includes("verify a domain");
+
+  if (!blockedByResendTestMode) return primary;
+
+  const fallbackRecipient = process.env.ADMIN_EMAIL || "";
+  const currentRecipient = String((payload as any).to || "");
+  if (!fallbackRecipient || currentRecipient === fallbackRecipient) {
+    return primary;
+  }
+
+  return resend.emails.send({
+    ...payload,
+    to: fallbackRecipient,
+  });
+}
 
 export async function POST(request: Request) {
   try {
@@ -71,9 +96,10 @@ export async function POST(request: Request) {
     });
 
     // Send OTP via email
-    const resendResponse = await resend.emails.send({
+    const recipient = testEmailInbox || email;
+    const resendResponse = await sendOtpWithFallback({
       from: resendFromEmail,
-      to: email,
+      to: recipient,
       subject: "Your Login OTP - Suraksha Charitable Trust",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 20px;">
@@ -93,6 +119,11 @@ export async function POST(request: Request) {
           <p style="color: #94a3b8; font-size: 12px; text-align: center; margin-top: 20px;">
             If you didn't request this code, please ignore this email.
           </p>
+          ${
+            recipient !== email
+              ? `<p style="color:#64748b; font-size:12px; text-align:center; margin-top:8px;">Test mode redirect: original recipient ${email} was routed to ${recipient}.</p>`
+              : ""
+          }
         </div>
       `,
     });

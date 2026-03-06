@@ -11,6 +11,9 @@ export interface ITrustDocument extends Document {
   filename: string;
   fileUrl?: string;
   fileType: "pdf" | "text" | "markdown";
+  mimeType?: string;
+  fileSize?: number;
+  fileData?: Buffer;
   chunks: IDocumentChunk[];
   totalChunks: number;
   uploadedBy: mongoose.Types.ObjectId;
@@ -38,6 +41,9 @@ const TrustDocumentSchema = new Schema<ITrustDocument>(
       enum: ["pdf", "text", "markdown"],
       default: "text",
     },
+    mimeType: { type: String },
+    fileSize: { type: Number },
+    fileData: { type: Buffer },
     chunks: [DocumentChunkSchema],
     totalChunks: { type: Number, default: 0 },
     uploadedBy: { type: Schema.Types.ObjectId, ref: "User" },
@@ -47,7 +53,6 @@ const TrustDocumentSchema = new Schema<ITrustDocument>(
 );
 
 TrustDocumentSchema.index({ isActive: 1 });
-TrustDocumentSchema.index({ "chunks.embedding": "2dsphere" });
 
 const TrustDocument: Model<ITrustDocument> =
   mongoose.models.TrustDocument ||

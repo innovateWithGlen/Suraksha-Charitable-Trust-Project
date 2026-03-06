@@ -5,10 +5,72 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL =
   process.env.RESEND_FROM_EMAIL || "Suraksha Trust <onboarding@resend.dev>";
 
+async function sendWithRecipientFallback(
+  payload: Parameters<typeof resend.emails.send>[0]
+) {
+  const primary = await resend.emails.send(payload);
+  if (!(primary as any)?.error) {
+    return primary;
+  }
+
+  const errorMessage = String((primary as any)?.error?.message || "").toLowerCase();
+  const blockedByResendTestMode =
+    errorMessage.includes("you can only send testing emails to your own email address") ||
+    errorMessage.includes("verify a domain");
+
+  const fallbackRecipient = process.env.ADMIN_EMAIL || "";
+  const currentRecipient = Array.isArray((payload as any).to)
+    ? String((payload as any).to?.[0] || "")
+    : String((payload as any).to || "");
+
+  if (!blockedByResendTestMode || !fallbackRecipient || currentRecipient === fallbackRecipient) {
+    return primary;
+  }
+
+  const retried = await resend.emails.send({
+    ...payload,
+    to: fallbackRecipient,
+  });
+
+  return retried;
+}
+
+function toAbsoluteUrl(pathOrUrl: string): string {
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  const base = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const normalizedBase = base.endsWith("/") ? base.slice(0, -1) : base;
+  const normalizedPath = pathOrUrl.startsWith("/") ? pathOrUrl : `/${pathOrUrl}`;
+  return `${normalizedBase}${normalizedPath}`;
+}
+
+function getTestInbox(): string | undefined {
+  const explicit = process.env.TEST_EMAIL_INBOX || process.env.DEMO_EMAIL_INBOX;
+  if (explicit) return explicit;
+
+  // In local/dev environments, default to admin mailbox for reliable testing.
+  if (process.env.NODE_ENV !== "production") {
+    return process.env.ADMIN_EMAIL || undefined;
+  }
+
+  return undefined;
+}
+
 function resolveRecipient(email: string): string {
+  const testInbox = getTestInbox();
+  if (testInbox) return testInbox;
+
   const demoEnabled = process.env.DEMO_EMAIL_REDIRECT_ENABLED === "true";
   if (!demoEnabled) return email;
   return process.env.DEMO_EMAIL_INBOX || process.env.ADMIN_EMAIL || email;
+}
+
+function maybeRedirectNotice(originalEmail: string): string {
+  const routed = resolveRecipient(originalEmail);
+  if (routed === originalEmail) return "";
+
+  return `<p style="color:#64748b; font-size:12px; margin-top:10px;">Test mode: original recipient <strong>${escapeHtml(
+    originalEmail
+  )}</strong> was redirected to <strong>${escapeHtml(routed)}</strong>.</p>`;
 }
 
 function escapeHtml(value: string): string {
@@ -39,7 +101,7 @@ export async function sendDonationConfirmation(
     }
   );
 
-  await resend.emails.send({
+  const response = await sendWithRecipientFallback({
     from: FROM_EMAIL,
     to: resolveRecipient(donor.email),
     subject: `Donation Confirmation - ₹${formattedAmount} | Suraksha Charitable Trust`,
@@ -75,6 +137,10 @@ export async function sendDonationConfirmation(
       </div>
     `,
   });
+
+  if ((response as any)?.error) {
+    throw new Error((response as any).error.message || "Failed to send donation confirmation email");
+  }
 }
 
 export async function sendCertificateEmail(
@@ -84,7 +150,7 @@ export async function sendCertificateEmail(
 ) {
   const formattedAmount = donation.amount.toLocaleString("en-IN");
 
-  await resend.emails.send({
+  const response = await sendWithRecipientFallback({
     from: FROM_EMAIL,
     to: resolveRecipient(donor.email),
     subject: `80G Tax Certificate - ₹${formattedAmount} | Suraksha Charitable Trust`,
@@ -116,6 +182,10 @@ export async function sendCertificateEmail(
       </div>
     `,
   });
+
+  if ((response as any)?.error) {
+    throw new Error((response as any).error.message || "Failed to send certificate email");
+  }
 }
 
 export async function sendContactNotification(inquiry: {
@@ -127,7 +197,7 @@ export async function sendContactNotification(inquiry: {
 }) {
   const adminEmail = process.env.ADMIN_EMAIL || "glenmonteiro47@gmail.com";
 
-  await resend.emails.send({
+  const response = await sendWithRecipientFallback({
     from: FROM_EMAIL,
     to: resolveRecipient(adminEmail),
     subject: `New Contact Inquiry: ${inquiry.subject}`,
@@ -149,10 +219,14 @@ export async function sendContactNotification(inquiry: {
       </div>
     `,
   });
+
+  if ((response as any)?.error) {
+    throw new Error((response as any).error.message || "Failed to send contact notification email");
+  }
 }
 
 export async function sendOTPEmail(email: string, otp: string) {
-  await resend.emails.send({
+  const response = await sendWithRecipientFallback({
     from: FROM_EMAIL,
     to: resolveRecipient(email),
     subject: "Your Login OTP - Suraksha Charitable Trust",
@@ -177,6 +251,10 @@ export async function sendOTPEmail(email: string, otp: string) {
       </div>
     `,
   });
+
+  if ((response as any)?.error) {
+    throw new Error((response as any).error.message || "Failed to send OTP email");
+  }
 }
 
 export async function send80GReceiptEmail(params: {
@@ -189,11 +267,11 @@ export async function send80GReceiptEmail(params: {
   pdfBase64?: string;
 }) {
   const { donor, transactionId, amount, certificateNumber, urnUsed, pdfUrl, pdfBase64 } = params;
+  const receiptUrl = toAbsoluteUrl(pdfUrl);
   const formattedAmount = amount.toLocaleString("en-IN");
-  const fixedSender = "glenmonteiro47@gmail.com";
-  const fixedRecipient = "glenmonteiro2410@gmail.com";
+  const recipient = resolveRecipient(donor.email);
   const commonPayload = {
-    to: fixedRecipient,
+    to: recipient,
     subject: `80G Receipt ${certificateNumber} | Suraksha Charitable Trust`,
     attachments: pdfBase64
       ? [
@@ -217,17 +295,19 @@ export async function send80GReceiptEmail(params: {
           <p style="margin:6px 0;"><strong>Tax Clause:</strong> Eligible for 50% tax deduction under Section 80G of the IT Act.</p>
         </div>
 
-        <p><a href="${pdfUrl}" style="background:#1a365d; color:#fff; text-decoration:none; padding:10px 16px; border-radius:8px; display:inline-block;">Download 80G Receipt</a></p>
+        <p><a href="${receiptUrl}" style="background:#1a365d; color:#fff; text-decoration:none; padding:10px 16px; border-radius:8px; display:inline-block;">Download 80G Receipt</a></p>
+        ${maybeRedirectNotice(donor.email)}
       </div>
     `,
   };
 
-  const primary = await resend.emails.send({ from: fixedSender, ...commonPayload });
+  const primary = await sendWithRecipientFallback({ from: FROM_EMAIL, ...commonPayload });
   if (!primary.error) {
     return;
   }
 
-  const fallback = await resend.emails.send({ from: FROM_EMAIL, ...commonPayload });
+  const fallbackFrom = "Suraksha Trust <onboarding@resend.dev>";
+  const fallback = await resend.emails.send({ from: fallbackFrom, ...commonPayload });
   if (fallback.error) {
     throw new Error(fallback.error.message || primary.error.message || "Failed to send 80G receipt email");
   }
@@ -241,7 +321,7 @@ export async function sendInquiryReplyEmail(params: {
 }) {
   const { toEmail, toName, subject, replyContent } = params;
 
-  await resend.emails.send({
+  const response = await sendWithRecipientFallback({
     from: FROM_EMAIL,
     to: resolveRecipient(toEmail),
     subject: `Re: ${subject} | Suraksha Charitable Trust`,
@@ -251,7 +331,12 @@ export async function sendInquiryReplyEmail(params: {
         <p style="color: #334155;">Dear ${escapeHtml(toName)},</p>
         <p style="color: #334155;">Thank you for contacting us. Please find our response below:</p>
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin:20px 0; white-space:pre-wrap; color:#0f172a;">${escapeHtml(replyContent)}</div>
+        ${maybeRedirectNotice(toEmail)}
       </div>
     `,
   });
+
+  if ((response as any)?.error) {
+    throw new Error((response as any).error.message || "Failed to send inquiry reply email");
+  }
 }

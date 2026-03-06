@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { MessageCircle, X, Send, Bot, User } from "lucide-react"
+import Image from "next/image"
+import { X, Send, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -10,6 +11,9 @@ type ChatMessage = {
   role: "user" | "assistant"
   text: string
 }
+
+const OUT_OF_SCOPE_REPLY =
+  "I am Suraksha Sahayaka, the AI assistant for Suraksha Charitable Trust. I do not have that information in my current context. Please contact the trust office directly in Sirsi for accurate help."
 
 export function Chatbot() {
   const [isOpen, setIsOpen] = useState(false)
@@ -50,7 +54,7 @@ export function Chatbot() {
       })
 
       const data = await res.json()
-      const reply = data?.text || "I don't have information about that in our documents. Please contact us directly."
+      const reply = data?.text || OUT_OF_SCOPE_REPLY
 
       setMessages((prev) => [
         ...prev,
@@ -62,7 +66,7 @@ export function Chatbot() {
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          text: "I don't have information about that in our documents. Please contact us directly.",
+          text: OUT_OF_SCOPE_REPLY,
         },
       ])
     } finally {
@@ -81,25 +85,31 @@ export function Chatbot() {
         <div
           className={cn(
             "flex w-[360px] max-w-[calc(100vw-3rem)] flex-col rounded-2xl shadow-2xl",
-            "border border-white/20",
-            "bg-card/80 backdrop-blur-xl",
+            "border border-border/80",
+            "bg-background/98 backdrop-blur-md",
             "animate-in fade-in slide-in-from-bottom-4 duration-300"
           )}
           style={{ height: "480px" }}
         >
-          <div className="flex items-center justify-between rounded-t-2xl bg-primary/90 backdrop-blur-sm px-4 py-3">
+          <div className="flex items-center justify-between rounded-t-2xl bg-primary px-4 py-3">
             <div className="flex items-center gap-2">
               <div className="flex size-8 items-center justify-center rounded-full bg-primary-foreground/20">
-                <Bot className="size-4 text-primary-foreground" />
+                <Image
+                  src="/images/logo.png"
+                  alt="Suraksha Charitable Trust logo"
+                  width={24}
+                  height={24}
+                  className="rounded-full object-cover"
+                />
               </div>
               <div>
-                <p className="text-sm font-semibold text-primary-foreground">Suraksha Assistant</p>
-                <p className="text-[10px] text-primary-foreground/60">{isTyping ? "Typing..." : "Online"}</p>
+                <p className="text-sm font-semibold text-primary-foreground">Suraksha Sahayaka</p>
+                <p className="text-[10px] text-primary-foreground/80">{isTyping ? "Typing..." : "Online"}</p>
               </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="rounded-full p-1 text-primary-foreground/60 hover:bg-primary-foreground/10 hover:text-primary-foreground transition-colors"
+              className="rounded-full p-1 text-primary-foreground/80 hover:bg-primary-foreground/15 hover:text-primary-foreground transition-colors"
               aria-label="Close chat"
             >
               <X className="size-4" />
@@ -109,21 +119,28 @@ export function Chatbot() {
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4">
             {messages.length === 0 && !isTyping && (
               <div className="flex h-full flex-col items-center justify-center text-center">
-                <div className="flex size-12 items-center justify-center rounded-full bg-secondary/10 mb-3">
-                  <Bot className="size-6 text-secondary" />
+                <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-secondary/20">
+                  <Image
+                    src="/images/logo.png"
+                    alt="Suraksha Charitable Trust logo"
+                    width={36}
+                    height={36}
+                    className="rounded-full object-cover"
+                  />
                 </div>
-                <p className="text-sm font-medium text-foreground">Welcome to Suraksha Trust!</p>
-                <p className="mt-1 text-xs text-muted-foreground max-w-[240px]">I answer only from trust documents.</p>
+                <p className="text-sm font-medium text-foreground">Welcome to Suraksha Charitable Trust!</p>
+                <p className="mt-1 text-xs text-muted-foreground max-w-[240px]">Ask me about 80G, 12A, PAN, location, and current initiatives.</p>
                 <div className="mt-4 flex flex-col gap-2 w-full">
                   {[
-                    "How can I donate?",
-                    "Do you provide 80G certificate?",
-                    "What programs does the trust run?",
+                    "Is my donation tax exempt under 80G?",
+                    "Where are you located in Sirsi?",
+                    "What kind of work do you do?",
+                    "What is your PAN and 12A URN?",
                   ].map((q) => (
                     <button
                       key={q}
                       onClick={() => sendMessage(q)}
-                      className="rounded-lg border border-border bg-card/50 px-3 py-2 text-xs text-foreground hover:bg-muted transition-colors text-left"
+                      className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground hover:bg-muted transition-colors text-left"
                     >
                       {q}
                     </button>
@@ -143,12 +160,24 @@ export function Chatbot() {
                         isUser ? "bg-accent text-accent-foreground" : "bg-secondary/20 text-secondary"
                       )}
                     >
-                      {isUser ? <User className="size-3" /> : <Bot className="size-3" />}
+                      {isUser ? (
+                        <User className="size-3" />
+                      ) : (
+                        <Image
+                          src="/images/logo.png"
+                          alt="Suraksha Charitable Trust logo"
+                          width={16}
+                          height={16}
+                          className="rounded-full object-cover"
+                        />
+                      )}
                     </div>
                     <div
                       className={cn(
                         "max-w-[75%] rounded-2xl px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap",
-                        isUser ? "bg-accent text-accent-foreground rounded-tr-sm" : "bg-muted text-foreground rounded-tl-sm"
+                        isUser
+                          ? "bg-accent text-accent-foreground rounded-tr-sm"
+                          : "bg-muted/90 text-foreground rounded-tl-sm border border-border/60"
                       )}
                     >
                       {message.text}
@@ -159,9 +188,15 @@ export function Chatbot() {
               {isTyping && (
                 <div className="flex gap-2">
                   <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary/20 text-secondary mt-0.5">
-                    <Bot className="size-3" />
+                    <Image
+                      src="/images/logo.png"
+                      alt="Suraksha Charitable Trust logo"
+                      width={16}
+                      height={16}
+                      className="rounded-full object-cover"
+                    />
                   </div>
-                  <div className="rounded-2xl rounded-tl-sm bg-muted px-3 py-2">
+                  <div className="rounded-2xl rounded-tl-sm border border-border/60 bg-muted/90 px-3 py-2">
                     <div className="flex gap-1">
                       <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/40 [animation-delay:0ms]" />
                       <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/40 [animation-delay:150ms]" />
@@ -173,7 +208,7 @@ export function Chatbot() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex items-center gap-2 border-t border-border/50 bg-card/50 backdrop-blur-sm px-3 py-3 rounded-b-2xl">
+          <form onSubmit={handleSubmit} className="flex items-center gap-2 rounded-b-2xl border-t border-border bg-background/95 px-3 py-3">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -197,12 +232,22 @@ export function Chatbot() {
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "group flex size-14 items-center justify-center rounded-full shadow-lg transition-all",
-          "bg-secondary/90 backdrop-blur-md border border-white/20",
+          "bg-secondary border border-secondary/30",
           "hover:bg-secondary hover:scale-105"
         )}
         aria-label={isOpen ? "Close chat" : "Open chat"}
       >
-        {isOpen ? <X className="size-6 text-secondary-foreground" /> : <MessageCircle className="size-6 text-secondary-foreground" />}
+        {isOpen ? (
+          <X className="size-6 text-secondary-foreground" />
+        ) : (
+          <Image
+            src="/images/logo.png"
+            alt="Open Suraksha Sahayaka"
+            width={28}
+            height={28}
+            className="rounded-full object-cover"
+          />
+        )}
       </button>
     </div>
   )

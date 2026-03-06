@@ -16,7 +16,11 @@ export async function POST(request: Request) {
       forceRegenerate: true,
     });
 
-    return NextResponse.json({ success: true, receipt: result });
+    return NextResponse.json({
+      success: true,
+      receipt: result,
+      warning: result.emailError || undefined,
+    });
   } catch (error: unknown) {
     console.error("POST /api/certificates/generate error:", error);
     if ((error as { name?: string }).name === "ZodError") {

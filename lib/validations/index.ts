@@ -168,6 +168,10 @@ export const notificationUpdateSchema = z.object({
   id: z.string(),
 });
 
+export const notificationClearAllSchema = z.object({
+  action: z.literal("clearAll"),
+});
+
 export const inquiryUpdateSchema = z.object({
   status: z.enum(["new", "read", "replied"]).optional(),
   replyContent: z.string().min(10).optional(),

@@ -5,7 +5,7 @@ import { send80GReceiptEmail } from "@/lib/email";
 import { generate80GReceiptPDFBuffer } from "@/lib/services/certificate-pdf";
 
 const TRUST_NAME = "Suraksha Charitable Trust";
-const DEFAULT_URN = "22AAATS0000A1Z1";
+const DEFAULT_URN = "80G/22AAATS0000A/S01";
 
 export async function generateReceiptForDonation(
   donationId: string,
@@ -23,9 +23,6 @@ export async function generateReceiptForDonation(
   }
 
   const donor = await Donor.findById(donation.donorId).lean();
-  if (!donor) {
-    throw new Error("Donor not found");
-  }
 
   const existingCertificate = await Certificate.findOne({ donationId: donation._id });
 
@@ -40,7 +37,7 @@ export async function generateReceiptForDonation(
     urnUsed,
     certificateNumber,
     donorName: donation.donorName,
-    donorPan: donor.panNumber,
+    donorPan: donor?.panNumber,
     donationDate: donation.createdAt,
     amount: donation.amount,
     transactionId: donation.transactionId,
@@ -56,10 +53,11 @@ export async function generateReceiptForDonation(
         $set: {
           donorId: donation.donorId,
           certificateNumber,
-          pdfUrl: "",
+          // Keep a non-empty placeholder to satisfy schema validation on upsert.
+          pdfUrl: existingCertificate?.pdfUrl || "/api/certificates/pending",
           type: existingCertificate ? "manual" : "auto",
           donorName: donation.donorName,
-          donorPan: donor.panNumber,
+          donorPan: donor?.panNumber,
           amount: donation.amount,
           donationDate: donation.createdAt,
           generatedAt: now,
@@ -92,29 +90,42 @@ export async function generateReceiptForDonation(
   );
 
   let receiptSent = false;
+  let emailError: string | null = null;
   if (options?.resendEmail !== false) {
-    await send80GReceiptEmail({
-      donor: { name: donation.donorName, email: donation.donorEmail },
-      transactionId: donation.transactionId,
-      amount: donation.amount,
-      certificateNumber: certificate.certificateNumber,
-      urnUsed,
-      pdfUrl: receiptUrl,
-      pdfBase64: pdfBuffer.toString("base64"),
-    });
-    receiptSent = true;
+    try {
+      await send80GReceiptEmail({
+        donor: { name: donation.donorName, email: donation.donorEmail },
+        transactionId: donation.transactionId,
+        amount: donation.amount,
+        certificateNumber: certificate.certificateNumber,
+        urnUsed,
+        pdfUrl: receiptUrl,
+        pdfBase64: pdfBuffer.toString("base64"),
+      });
+      receiptSent = true;
 
-    await Certificate.updateOne(
-      { _id: certificate._id },
-      {
-        $set: {
-          receiptSent: true,
-          receiptSentAt: now,
-          lastResentAt: now,
-        },
-        $inc: { resendCount: existingCertificate ? 1 : 0 },
-      }
-    );
+      await Certificate.updateOne(
+        { _id: certificate._id },
+        {
+          $set: {
+            receiptSent: true,
+            receiptSentAt: now,
+            lastResentAt: now,
+          },
+          $inc: { resendCount: existingCertificate ? 1 : 0 },
+        }
+      );
+    } catch (error) {
+      emailError = error instanceof Error ? error.message : "Failed to send email";
+      await Certificate.updateOne(
+        { _id: certificate._id },
+        {
+          $set: {
+            receiptSent: false,
+          },
+        }
+      );
+    }
   }
 
   await Donation.updateOne(
@@ -137,6 +148,7 @@ export async function generateReceiptForDonation(
     certificateNumber: certificate.certificateNumber,
     urnUsed,
     receiptSent,
+    emailError,
     pdfUrl: receiptUrl,
     timestamp: now,
   };

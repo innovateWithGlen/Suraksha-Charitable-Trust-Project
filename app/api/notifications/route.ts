@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
 import { ContactInquiry, Donation } from "@/lib/models";
-import { notificationUpdateSchema } from "@/lib/validations";
+import { notificationClearAllSchema, notificationUpdateSchema } from "@/lib/validations";
 
 export async function GET() {
   try {
@@ -71,7 +71,28 @@ export async function PATCH(request: Request) {
 
     await dbConnect();
 
-    const payload = notificationUpdateSchema.parse(await request.json());
+    const body = await request.json();
+    const clearAllAttempt = notificationClearAllSchema.safeParse(body);
+
+    if (clearAllAttempt.success) {
+      await Promise.all([
+        ContactInquiry.updateMany(
+          { status: "new" },
+          { $set: { status: "read" } }
+        ),
+        Donation.updateMany(
+          {
+            status: { $in: ["pending", "failed"] },
+            notificationRead: { $ne: true },
+          },
+          { $set: { notificationRead: true, notificationReadAt: new Date() } }
+        ),
+      ]);
+
+      return NextResponse.json({ success: true, cleared: true });
+    }
+
+    const payload = notificationUpdateSchema.parse(body);
 
     if (payload.type === "inquiry") {
       await ContactInquiry.updateOne(
