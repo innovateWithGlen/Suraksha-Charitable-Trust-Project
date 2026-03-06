@@ -37,7 +37,26 @@ async function sendWithRecipientFallback(
 
 function toAbsoluteUrl(pathOrUrl: string): string {
   if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
-  const base = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  const configuredBase = process.env.NEXT_PUBLIC_APP_URL;
+  const vercelProductionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  const vercelPreviewUrl = process.env.VERCEL_URL;
+
+  const looksLikeLocalhost = (value: string) => /localhost|127\.0\.0\.1/i.test(value);
+
+  let base = configuredBase || "";
+  if (process.env.NODE_ENV === "production" && (!base || looksLikeLocalhost(base))) {
+    if (vercelProductionUrl) {
+      base = `https://${vercelProductionUrl}`;
+    } else if (vercelPreviewUrl) {
+      base = `https://${vercelPreviewUrl}`;
+    }
+  }
+
+  if (!base) {
+    base = "http://localhost:3000";
+  }
+
   const normalizedBase = base.endsWith("/") ? base.slice(0, -1) : base;
   const normalizedPath = pathOrUrl.startsWith("/") ? pathOrUrl : `/${pathOrUrl}`;
   return `${normalizedBase}${normalizedPath}`;

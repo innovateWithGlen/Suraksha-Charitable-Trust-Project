@@ -37,7 +37,7 @@ export default function TaxDocumentationPage() {
   };
 
   const openManualEmail = (item: any) => {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    const baseUrl = window.location.origin || process.env.NEXT_PUBLIC_APP_URL;
     const receiptUrl = `${baseUrl}${item.pdfUrl}`;
     const subject = `80G Receipt ${item.certificateNumber} | Suraksha Charitable Trust`;
     const body =
