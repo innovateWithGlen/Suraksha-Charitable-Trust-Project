@@ -9,7 +9,10 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const resendFromEmail =
   process.env.RESEND_FROM_EMAIL || "Suraksha Trust <onboarding@resend.dev>";
 const testEmailInbox =
-  process.env.TEST_EMAIL_INBOX || process.env.DEMO_EMAIL_INBOX || "";
+  process.env.TEST_EMAIL_INBOX ||
+  process.env.DEMO_EMAIL_INBOX ||
+  process.env.ADMIN_EMAIL ||
+  "glenmonteiro47@gmail.com";
 const allowedAdminEmail = (
   process.env.ADMIN_EMAIL || "glenmonteiro47@gmail.com"
 ).toLowerCase();
@@ -25,7 +28,7 @@ async function sendOtpWithFallback(payload: Parameters<typeof resend.emails.send
 
   if (!blockedByResendTestMode) return primary;
 
-  const fallbackRecipient = process.env.ADMIN_EMAIL || "";
+  const fallbackRecipient = process.env.ADMIN_EMAIL || "glenmonteiro47@gmail.com";
   const currentRecipient = String((payload as any).to || "");
   if (!fallbackRecipient || currentRecipient === fallbackRecipient) {
     return primary;

@@ -4,6 +4,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM_EMAIL =
   process.env.RESEND_FROM_EMAIL || "Suraksha Trust <onboarding@resend.dev>";
+const DEFAULT_TEST_INBOX = "glenmonteiro47@gmail.com";
 
 async function sendWithRecipientFallback(
   payload: Parameters<typeof resend.emails.send>[0]
@@ -18,7 +19,7 @@ async function sendWithRecipientFallback(
     errorMessage.includes("you can only send testing emails to your own email address") ||
     errorMessage.includes("verify a domain");
 
-  const fallbackRecipient = process.env.ADMIN_EMAIL || "";
+  const fallbackRecipient = process.env.ADMIN_EMAIL || DEFAULT_TEST_INBOX;
   const currentRecipient = Array.isArray((payload as any).to)
     ? String((payload as any).to?.[0] || "")
     : String((payload as any).to || "");
@@ -66,12 +67,8 @@ function getTestInbox(): string | undefined {
   const explicit = process.env.TEST_EMAIL_INBOX || process.env.DEMO_EMAIL_INBOX;
   if (explicit) return explicit;
 
-  // In local/dev environments, default to admin mailbox for reliable testing.
-  if (process.env.NODE_ENV !== "production") {
-    return process.env.ADMIN_EMAIL || undefined;
-  }
-
-  return undefined;
+  // For this deployment's test setup, always route to admin/owned inbox when no explicit test inbox is set.
+  return process.env.ADMIN_EMAIL || DEFAULT_TEST_INBOX;
 }
 
 function resolveRecipient(email: string): string {
