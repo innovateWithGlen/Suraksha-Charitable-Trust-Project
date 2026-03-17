@@ -1,29 +1,11 @@
 import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { getBlobTokenInfo, getBlobTokenValidation, getExpenseBlobAccess } from "@/lib/blob";
 import dbConnect from "@/lib/mongodb";
 import { CSRExpense, CSRProject } from "@/lib/models";
 import { recomputeProjectUtilizedAmount } from "@/lib/csr-helpers";
 import { csrExpenseSchema } from "@/lib/validations";
-
-function hasValidBlobToken() {
-  const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) {
-    return false;
-  }
-
-  const normalized = token.trim();
-  if (!normalized) {
-    return false;
-  }
-
-  // Reject the example placeholder so uploads fail with a useful message.
-  if (normalized.includes("your_real_token")) {
-    return false;
-  }
-
-  return true;
-}
 
 export async function GET(
   request: Request,
@@ -77,10 +59,21 @@ export async function POST(
       return NextResponse.json({ error: "Bill document file is required" }, { status: 400 });
     }
 
-    if (!hasValidBlobToken()) {
+    const blobValidation = getBlobTokenValidation();
+    if (!blobValidation.ok) {
       return NextResponse.json(
         {
-          error: "Blob storage is not configured. Set a valid BLOB_READ_WRITE_TOKEN in .env.local and restart the dev server.",
+          error: blobValidation.error,
+        },
+        { status: 500 }
+      );
+    }
+
+    const tokenInfo = getBlobTokenInfo();
+    if (!tokenInfo?.token) {
+      return NextResponse.json(
+        {
+          error: "Blob storage is not configured. Missing Blob read/write token in runtime.",
         },
         { status: 500 }
       );
@@ -88,7 +81,8 @@ export async function POST(
 
     const filename = `csr-expenses/${id}/${Date.now()}-${billFile.name}`;
     const uploaded = await put(filename, billFile, {
-      access: "public",
+      token: tokenInfo.token,
+      access: getExpenseBlobAccess(),
       addRandomSuffix: true,
       contentType: billFile.type || "application/octet-stream",
     });
@@ -126,7 +120,9 @@ export async function POST(
     }
     if (typeof error?.message === "string" && error.message.toLowerCase().includes("blob")) {
       return NextResponse.json(
-        { error: "Blob storage is not configured correctly. Please check the Vercel Blob token." },
+        {
+          error: `Blob storage error: ${error.message}. Visit /api/debug/blob (while signed in) for a step-by-step diagnosis.`,
+        },
         { status: 500 }
       );
     }

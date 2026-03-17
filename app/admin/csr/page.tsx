@@ -57,6 +57,9 @@ const sectionOptions = {
 } as const;
 
 type SectionKey = keyof typeof sectionOptions;
+type CoverImageInputMode = "url" | "upload";
+
+const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
 
 export default function AdminCSRPage() {
   const { data, isLoading, mutate } = useSWR("/api/csr-projects?limit=100", fetcher, {
@@ -79,6 +82,9 @@ export default function AdminCSRPage() {
   const [expenseSubmitting, setExpenseSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState("");
   const [activeSection, setActiveSection] = useState<SectionKey>("project");
+  const [coverImageMode, setCoverImageMode] = useState<CoverImageInputMode>("url");
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [coverImageUploading, setCoverImageUploading] = useState(false);
   const [expenseForm, setExpenseForm] = useState({
     projectId: "",
     amountPaid: "",
@@ -160,15 +166,45 @@ export default function AdminCSRPage() {
       return;
     }
 
+    if (coverImageMode === "upload" && !coverImageFile) {
+      setProjectFeedback("Please select an image file when Upload Image mode is selected.");
+      return;
+    }
+
     setProjectFeedback("");
     setSaving(true);
+
+    let resolvedCoverImageUrl = form.coverImageUrl;
+
+    if (coverImageMode === "upload" && coverImageFile) {
+      setCoverImageUploading(true);
+      const uploadPayload = new FormData();
+      uploadPayload.append("image", coverImageFile);
+
+      const uploadResponse = await fetch("/api/uploads/images", {
+        method: "POST",
+        body: uploadPayload,
+      });
+
+      setCoverImageUploading(false);
+
+      if (!uploadResponse.ok) {
+        setSaving(false);
+        const uploadBody = await uploadResponse.json().catch(() => ({}));
+        setProjectFeedback(getApiErrorMessage(uploadBody, "Failed to upload project image."));
+        return;
+      }
+
+      const uploadBody = await uploadResponse.json().catch(() => ({}));
+      resolvedCoverImageUrl = typeof uploadBody?.url === "string" ? uploadBody.url : "";
+    }
 
     const payload = {
       title: form.title,
       description: form.description,
       category: form.category,
       goalAmount: Number(form.goalAmount),
-      coverImageUrl: form.coverImageUrl,
+      coverImageUrl: resolvedCoverImageUrl,
       status: form.status,
     };
 
@@ -187,6 +223,8 @@ export default function AdminCSRPage() {
 
     setForm(initialForm);
     setEditingId("");
+    setCoverImageMode("url");
+    setCoverImageFile(null);
     setProjectFeedback(editingId ? "CSR project updated successfully." : "CSR project created successfully.");
     await Promise.all([
       mutate(),
@@ -249,13 +287,15 @@ export default function AdminCSRPage() {
   const startEdit = (project: any) => {
     setActiveSection("project");
     setEditingId(project._id);
+    setCoverImageMode("url");
+    setCoverImageFile(null);
     setForm({
-      title: project.title,
-      description: project.description,
-      category: project.category,
+      title: project.title || "",
+      description: project.description || "",
+      category: project.category || "Health",
       goalAmount: String(project.goalAmount || 0),
       coverImageUrl: project.coverImageUrl || "",
-      status: project.status,
+      status: project.status || "Open",
     });
   };
 
@@ -322,8 +362,58 @@ export default function AdminCSRPage() {
               <Input type="number" min={1} value={form.goalAmount} onChange={(e) => setForm((s) => ({ ...s, goalAmount: e.target.value }))} />
             </div>
             <div>
-              <Label>Cover Image URL</Label>
-              <Input value={form.coverImageUrl} onChange={(e) => setForm((s) => ({ ...s, coverImageUrl: e.target.value }))} />
+              <Label>Cover Image Source</Label>
+              <div className="mt-1 flex gap-2">
+                <Button
+                  type="button"
+                  variant={coverImageMode === "url" ? "default" : "outline"}
+                  onClick={() => setCoverImageMode("url")}
+                >
+                  Image URL
+                </Button>
+                <Button
+                  type="button"
+                  variant={coverImageMode === "upload" ? "default" : "outline"}
+                  onClick={() => setCoverImageMode("upload")}
+                >
+                  Upload Image
+                </Button>
+              </div>
+              {coverImageMode === "url" ? (
+                <Input
+                  key="cover-image-url"
+                  className="mt-2"
+                  placeholder="https://example.com/project-cover.jpg"
+                  value={form.coverImageUrl}
+                  onChange={(e) => setForm((s) => ({ ...s, coverImageUrl: e.target.value }))}
+                />
+              ) : (
+                <Input
+                  key="cover-image-file"
+                  className="mt-2"
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    if (!file) {
+                      setCoverImageFile(null);
+                      return;
+                    }
+
+                    if (!allowedImageTypes.includes(file.type)) {
+                      setCoverImageFile(null);
+                      setProjectFeedback("Only JPG, JPEG, PNG, and WEBP images are allowed.");
+                      return;
+                    }
+
+                    setProjectFeedback("");
+                    setCoverImageFile(file);
+                  }}
+                />
+              )}
+              {coverImageMode === "upload" && coverImageFile ? (
+                <p className="mt-2 text-xs text-muted-foreground">Selected file: {coverImageFile.name}</p>
+              ) : null}
             </div>
             <div>
               <Label>Status</Label>
@@ -333,9 +423,9 @@ export default function AdminCSRPage() {
             </div>
 
             <div className="md:col-span-2 flex gap-3">
-              <Button onClick={submit} disabled={saving}><Save className="mr-2 size-4" />{editingId ? "Update Project" : "Create Project"}</Button>
+              <Button onClick={submit} disabled={saving || coverImageUploading}><Save className="mr-2 size-4" />{saving || coverImageUploading ? "Saving..." : editingId ? "Update Project" : "Create Project"}</Button>
               {editingId ? (
-                <Button variant="outline" onClick={() => { setEditingId(""); setForm(initialForm); }}><XCircle className="mr-2 size-4" />Cancel Edit</Button>
+                <Button variant="outline" onClick={() => { setEditingId(""); setForm(initialForm); setCoverImageMode("url"); setCoverImageFile(null); }}><XCircle className="mr-2 size-4" />Cancel Edit</Button>
               ) : null}
             </div>
 
