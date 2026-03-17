@@ -1,7 +1,8 @@
 import React from "react";
 import path from "node:path";
 import { promises as fs } from "node:fs";
-import { Document, Page, Text, View, StyleSheet, Image, renderToBuffer } from "@react-pdf/renderer";
+import ReactPDF from "@react-pdf/renderer";
+const { Document, Page, Text, View, StyleSheet, Image, renderToBuffer } = ReactPDF;
 
 type ReceiptPDFData = {
   trustName: string;
