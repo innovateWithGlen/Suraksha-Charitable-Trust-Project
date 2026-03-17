@@ -22,6 +22,11 @@
         "name": "next"
       }
     ],
+    "types": [
+      "node",
+      "react",
+      "react-dom"
+    ],
     "paths": {
       "@/*": [
         "./*"
@@ -36,6 +41,8 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    ".next/dev/node_modules/**",
+    ".next/cache/**"
   ]
 }

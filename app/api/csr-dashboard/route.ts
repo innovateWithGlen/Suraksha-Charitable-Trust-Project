@@ -1,19 +1,18 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
-import { CSRProject, CorporateSponsor, CSRPledge } from "@/lib/models";
-
-const TOTAL_CSR_FUND = 80000000;
+import { CSRProject, CorporateSponsor, CSRPledge, CSRExpense } from "@/lib/models";
 
 export async function GET() {
   try {
     await dbConnect();
 
-    const [projects, sponsors, pledges, categoryBreakdown] = await Promise.all([
+    const [projects, sponsors, pledges, expenses, categoryBreakdown] = await Promise.all([
       CSRProject.find({ fiscalYear: "2025-26" }).lean(),
       CorporateSponsor.find({ fiscalYear: "2025-26", isActive: true })
         .sort({ totalContributed: -1 })
         .lean(),
       CSRPledge.find({ fiscalYear: "2025-26" }).lean(),
+      CSRExpense.find({}).lean(),
       CSRProject.aggregate([
         { $match: { fiscalYear: "2025-26" } },
         {
@@ -28,8 +27,12 @@ export async function GET() {
       ]),
     ]);
 
-    const utilizedFunds = projects.reduce((sum, project) => sum + (project.raisedAmount || 0), 0);
-    const remainingFunds = Math.max(TOTAL_CSR_FUND - utilizedFunds, 0);
+    const totalBudget = pledges
+      .filter((pledge) => pledge.status !== "cancelled")
+      .reduce((sum, pledge) => sum + (pledge.amount || 0), 0);
+
+    const utilizedFunds = expenses.reduce((sum, expense) => sum + (expense.amountPaid || 0), 0);
+    const remainingFunds = Math.max(totalBudget - utilizedFunds, 0);
 
     const byStatus = projects.reduce(
       (acc, project) => {
@@ -49,7 +52,7 @@ export async function GET() {
 
     return NextResponse.json({
       fiscalYear: "2025-26",
-      totalCSRFund: TOTAL_CSR_FUND,
+      totalCSRFund: totalBudget,
       utilizedFunds,
       remainingFunds,
       projectsCount: projects.length,

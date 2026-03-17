@@ -12,6 +12,18 @@ import { toast } from "sonner";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
+const idTypeLabel: Record<string, string> = {
+  aadhaar: "Aadhaar",
+  passport: "Passport",
+  voterId: "Voter ID",
+};
+
+function maskIdentity(value?: string) {
+  if (!value) return "-";
+  const visible = value.slice(-4);
+  return `XXXX${visible}`;
+}
+
 export default function TaxDocumentationPage() {
   const [search, setSearch] = useState("");
 
@@ -78,6 +90,7 @@ export default function TaxDocumentationPage() {
               <TableRow>
                 <TableHead>Receipt No</TableHead>
                 <TableHead>Donor</TableHead>
+                <TableHead>Filing ID</TableHead>
                 <TableHead>Transaction ID</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>URN</TableHead>
@@ -88,9 +101,9 @@ export default function TaxDocumentationPage() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={8}>Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9}>Loading...</TableCell></TableRow>
               ) : certificates.length === 0 ? (
-                <TableRow><TableCell colSpan={8}>No tax receipts found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9}>No tax receipts found</TableCell></TableRow>
               ) : (
                 certificates.map((item: any) => (
                   <TableRow key={item._id}>
@@ -98,6 +111,13 @@ export default function TaxDocumentationPage() {
                     <TableCell>
                       <p className="text-sm font-medium">{item.donorName}</p>
                       <p className="text-xs text-muted-foreground">{item.donorEmail || "-"}</p>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {item.donorPan
+                        ? `PAN: ${maskIdentity(item.donorPan)}`
+                        : item.donorIdType && item.donorIdNumber
+                          ? `${idTypeLabel[item.donorIdType] || item.donorIdType}: ${maskIdentity(item.donorIdNumber)}`
+                          : "-"}
                     </TableCell>
                     <TableCell className="font-mono text-xs">{item.transactionId || "-"}</TableCell>
                     <TableCell>INR {item.amount.toLocaleString("en-IN")}</TableCell>

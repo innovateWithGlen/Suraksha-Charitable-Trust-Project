@@ -25,7 +25,7 @@ export function WhatsAppConnect({
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat on WhatsApp"
-        className={`fixed bottom-6 left-6 z-50 flex size-14 items-center justify-center rounded-full bg-green-500 text-white shadow-lg transition hover:bg-green-600 hover:scale-105 ${className}`}
+        className={`fixed bottom-24 right-6 z-50 flex size-14 items-center justify-center rounded-full bg-green-500 text-white shadow-lg transition hover:bg-green-600 hover:scale-105 ${className}`}
       >
         <MessageCircle className="size-6" />
       </a>

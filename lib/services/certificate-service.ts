@@ -3,9 +3,20 @@ import { Certificate, Donation, Donor } from "@/lib/models";
 import { generateCertificateNumber } from "@/lib/certificate-generator";
 import { send80GReceiptEmail } from "@/lib/email";
 import { generate80GReceiptPDFBuffer } from "@/lib/services/certificate-pdf";
+import { decrypt } from "@/lib/encryption";
+import { isValidIdProofNumber, isValidPanNumber, normalizeIdProofNumber, normalizePanNumber } from "@/lib/identity-format";
 
 const TRUST_NAME = "Suraksha Charitable Trust";
 const DEFAULT_URN = "80G/22AAATS0000A/S01";
+
+function safeDecrypt(value?: string): string | undefined {
+  if (!value) return undefined;
+  try {
+    return decrypt(value);
+  } catch {
+    return value;
+  }
+}
 
 export async function generateReceiptForDonation(
   donationId: string,
@@ -23,6 +34,22 @@ export async function generateReceiptForDonation(
   }
 
   const donor = await Donor.findById(donation.donorId).lean();
+  const donorPanRaw = normalizePanNumber(safeDecrypt(donor?.panNumber));
+  const donorPan = donorPanRaw && isValidPanNumber(donorPanRaw) ? donorPanRaw : undefined;
+  const donorIdType = donor?.idProofType as "aadhaar" | "passport" | "voterId" | undefined;
+  const donorIdNumberRaw = donorIdType
+    ? normalizeIdProofNumber(donorIdType, safeDecrypt(donor?.idProofNumber))
+    : undefined;
+  const donorIdNumber =
+    donorIdType && donorIdNumberRaw && isValidIdProofNumber(donorIdType, donorIdNumberRaw)
+      ? donorIdNumberRaw
+      : undefined;
+
+  if (!donorPan && !(donorIdType && donorIdNumber)) {
+    throw new Error(
+      "80G filing requires PAN. If PAN is unavailable, capture Aadhaar, Passport, or Voter ID before generating receipt."
+    );
+  }
 
   const existingCertificate = await Certificate.findOne({ donationId: donation._id });
 
@@ -37,7 +64,9 @@ export async function generateReceiptForDonation(
     urnUsed,
     certificateNumber,
     donorName: donation.donorName,
-    donorPan: donor?.panNumber,
+    donorPan,
+    donorIdType,
+    donorIdNumber,
     donationDate: donation.createdAt,
     amount: donation.amount,
     transactionId: donation.transactionId,
@@ -57,7 +86,9 @@ export async function generateReceiptForDonation(
           pdfUrl: existingCertificate?.pdfUrl || "/api/certificates/pending",
           type: existingCertificate ? "manual" : "auto",
           donorName: donation.donorName,
-          donorPan: donor?.panNumber,
+          donorPan,
+          donorIdType,
+          donorIdNumber,
           amount: donation.amount,
           donationDate: donation.createdAt,
           generatedAt: now,

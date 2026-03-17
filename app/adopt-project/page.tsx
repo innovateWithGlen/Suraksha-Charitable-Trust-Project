@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { CSRProjectCard } from "@/components/csr/csr-project-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 type CSRProject = {
   _id: string;
@@ -19,35 +22,29 @@ type CSRProject = {
 };
 
 export default function AdoptProjectPage() {
-  const [projects, setProjects] = useState<CSRProject[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading, mutate } = useSWR(
+    "/api/csr-projects?status=Open&limit=100",
+    fetcher,
+    { refreshInterval: 5000 }
+  );
+
+  const projects = (data?.projects || []) as CSRProject[];
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [form, setForm] = useState({
     companyName: "",
     amount: "",
     contactName: "",
     contactEmail: "",
+    contactPhone: "",
     notes: "",
   });
   const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const response = await fetch("/api/csr-projects?status=Open&limit=100");
-        if (!response.ok) return;
-        const data = await response.json();
-        setProjects(data.projects || []);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProjects();
-  }, []);
+  const [submitting, setSubmitting] = useState(false);
 
   const submitPledge = async () => {
     if (!selectedProjectId) return;
+    setSubmitting(true);
+    setMessage("");
 
     const response = await fetch("/api/csr-pledges", {
       method: "POST",
@@ -58,18 +55,30 @@ export default function AdoptProjectPage() {
         amount: Number(form.amount),
         contactName: form.contactName,
         contactEmail: form.contactEmail,
+        contactPhone: form.contactPhone,
         notes: form.notes,
         status: "pledged",
       }),
     });
 
+    setSubmitting(false);
+
     if (!response.ok) {
-      setMessage("Unable to submit pledge. Please review details and try again.");
+      const payload = await response.json().catch(() => ({}));
+      setMessage(payload?.error || "Unable to submit pledge. Please review details and try again.");
       return;
     }
 
-    setMessage("Pledge submitted successfully. Our CSR team will contact you soon.");
-    setForm({ companyName: "", amount: "", contactName: "", contactEmail: "", notes: "" });
+    setMessage("Pledge submitted successfully and is pending admin confirmation.");
+    setForm({
+      companyName: "",
+      amount: "",
+      contactName: "",
+      contactEmail: "",
+      contactPhone: "",
+      notes: "",
+    });
+    await mutate();
   };
 
   return (
@@ -82,7 +91,7 @@ export default function AdoptProjectPage() {
           </p>
         </div>
 
-        {loading ? (
+        {isLoading ? (
           <p className="mt-10 text-center text-muted-foreground">Loading projects...</p>
         ) : (
           <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -129,14 +138,18 @@ export default function AdoptProjectPage() {
               <Label>Contact Email</Label>
               <Input type="email" value={form.contactEmail} onChange={(e) => setForm((s) => ({ ...s, contactEmail: e.target.value }))} />
             </div>
+            <div>
+              <Label>Contact Phone</Label>
+              <Input value={form.contactPhone} onChange={(e) => setForm((s) => ({ ...s, contactPhone: e.target.value }))} />
+            </div>
             <div className="md:col-span-2">
               <Label>Notes</Label>
               <Input value={form.notes} onChange={(e) => setForm((s) => ({ ...s, notes: e.target.value }))} />
             </div>
 
             <div className="md:col-span-2">
-              <Button onClick={submitPledge} disabled={!selectedProjectId || !form.companyName || !form.amount}>
-                Submit Pledge
+              <Button onClick={submitPledge} disabled={submitting || !selectedProjectId || !form.companyName || !form.amount}>
+                {submitting ? "Submitting..." : "Submit Pledge"}
               </Button>
               {message ? <p className="mt-3 text-sm text-muted-foreground">{message}</p> : null}
             </div>

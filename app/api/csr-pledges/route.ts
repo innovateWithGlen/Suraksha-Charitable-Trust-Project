@@ -1,26 +1,13 @@
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
 import dbConnect from "@/lib/mongodb";
 import { auth } from "@/lib/auth";
-import { CSRPledge, CSRProject, CorporateSponsor } from "@/lib/models";
+import { CSRPledge, CSRProject } from "@/lib/models";
+import {
+  recomputeProjectRaisedAmount,
+  upsertCorporateSponsorContribution,
+} from "@/lib/csr-helpers";
 import { csrPledgeSchema, paginationSchema } from "@/lib/validations";
-
-async function recomputeProjectRaisedAmount(projectId: string) {
-  const projectObjectId = new mongoose.Types.ObjectId(projectId);
-  const confirmed = await CSRPledge.aggregate([
-    { $match: { projectId: projectObjectId, status: "confirmed" } },
-    { $group: { _id: null, total: { $sum: "$amount" } } },
-  ]);
-
-  const total = confirmed[0]?.total || 0;
-  const project = await CSRProject.findById(projectId).lean();
-  if (!project) return;
-
-  const nextStatus = total >= project.goalAmount ? "Funded" : project.status === "Closed" ? "Closed" : "Open";
-  await CSRProject.findByIdAndUpdate(projectId, {
-    $set: { raisedAmount: total, status: nextStatus },
-  });
-}
+import { sendCSRPledgeAdminNotification } from "@/lib/email";
 
 export async function GET(request: Request) {
   try {
@@ -96,28 +83,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "This project is not open for pledges" }, { status: 400 });
     }
 
+    if (!Number.isFinite(validated.amount) || validated.amount <= 0) {
+      return NextResponse.json({ error: "Invalid pledge amount" }, { status: 400 });
+    }
+
     const pledge = await CSRPledge.create({
       ...validated,
       contactEmail: validated.contactEmail || undefined,
+      contactPhone: validated.contactPhone || undefined,
       status: validated.status || "pledged",
+      confirmationDate: validated.status === "confirmed" ? new Date() : undefined,
     });
 
     if (pledge.status === "confirmed") {
-      await CorporateSponsor.findOneAndUpdate(
-        { companyName: validated.companyName.trim(), fiscalYear: validated.fiscalYear || "2025-26" },
-        {
-          $inc: { totalContributed: pledge.amount },
-          $setOnInsert: {
-            isActive: true,
-            logoUrl: "",
-            fiscalYear: validated.fiscalYear || "2025-26",
-          },
-        },
-        { upsert: true, new: true }
-      );
+      await upsertCorporateSponsorContribution({
+        companyName: validated.companyName,
+        fiscalYear: validated.fiscalYear || "2025-26",
+        amount: pledge.amount,
+      });
     }
 
     await recomputeProjectRaisedAmount(String(pledge.projectId));
+
+    // Fire-and-forget admin notification (don't block pledge creation)
+    sendCSRPledgeAdminNotification({
+      companyName: pledge.companyName,
+      contactEmail: pledge.contactEmail ?? undefined,
+      contactPhone: pledge.contactPhone ?? undefined,
+      amount: pledge.amount,
+      projectTitle: (project as any).title || "Unknown",
+      fiscalYear: pledge.fiscalYear ?? undefined,
+      notes: (pledge as any).notes ?? undefined,
+    }).catch((err: unknown) => console.error("CSR pledge notification error:", err));
 
     return NextResponse.json({ pledge }, { status: 201 });
   } catch (error: any) {

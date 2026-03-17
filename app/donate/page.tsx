@@ -27,8 +27,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import { WhatsAppConnect } from "@/components/whatsapp-connect"
+import { IdProofType, isValidIdProofNumber, isValidPanNumber, normalizeIdProofNumber, normalizePanNumber } from "@/lib/identity-format"
 
 declare global {
   interface Window {
@@ -49,7 +50,11 @@ export default function DonatePage() {
     name: "",
     email: "",
     phone: "",
+    panNumber: "",
+    idProofType: "" as "" | IdProofType,
+    idProofNumber: "",
   })
+  const [formError, setFormError] = useState("")
   const [txnId, setTxnId] = useState("")
   const [donationId, setDonationId] = useState("")
 
@@ -68,6 +73,7 @@ export default function DonatePage() {
 
   const handleRequires80GChange = (checked: boolean) => {
     setRequires80G(checked)
+    setFormError("")
 
     if (checked && (!selectedAmount || selectedAmount < 5000)) {
       setAmount(5000)
@@ -81,7 +87,36 @@ export default function DonatePage() {
   }
 
   const handlePayment = async () => {
+    const panNumber = normalizePanNumber(donorInfo.panNumber) || ""
+    const idProofType = donorInfo.idProofType
+    const idProofNumber = idProofType
+      ? normalizeIdProofNumber(idProofType, donorInfo.idProofNumber) || ""
+      : donorInfo.idProofNumber.trim()
+
     if (!donorInfo.name || !donorInfo.email || !selectedAmount || selectedAmount < minimumAmount) return
+
+    if (requires80G) {
+      const hasPan = !!panNumber
+      const hasAlternate = !!idProofType && !!idProofNumber
+
+      if (hasPan && !isValidPanNumber(panNumber)) {
+        setFormError("Enter a valid PAN number (e.g., ABCDE1234F)")
+        return
+      }
+
+      if (!hasPan && !hasAlternate) {
+        setFormError("For 80G filing, provide PAN or alternate ID (Aadhaar/Passport/Voter ID)")
+        return
+      }
+
+      if (hasAlternate && idProofType && !isValidIdProofNumber(idProofType, idProofNumber)) {
+        setFormError("Enter a valid alternate ID number")
+        return
+      }
+    }
+
+    setFormError("")
+
     try {
       setStep("processing")
 
@@ -92,6 +127,9 @@ export default function DonatePage() {
           donorName: donorInfo.name,
           donorEmail: donorInfo.email,
           donorPhone: donorInfo.phone,
+          panNumber,
+          idProofType: idProofType || undefined,
+          idProofNumber: idProofNumber || undefined,
           amount: selectedAmount,
           requires80G,
           method: "other",
@@ -100,6 +138,8 @@ export default function DonatePage() {
       })
 
       if (!donationRes.ok) {
+        const err = await donationRes.json().catch(() => ({}))
+        setFormError(err?.error || "Unable to process donation details")
         setStep("failure")
         return
       }
@@ -208,7 +248,8 @@ export default function DonatePage() {
     setAmount(1000)
     setCustomAmount("")
     setRequires80G(false)
-    setDonorInfo({ name: "", email: "", phone: "" })
+    setDonorInfo({ name: "", email: "", phone: "", panNumber: "", idProofType: "", idProofNumber: "" })
+    setFormError("")
     setTxnId("")
     setDonationId("")
   }
@@ -295,11 +336,6 @@ export default function DonatePage() {
             <p className="text-center text-xs text-muted-foreground">
               A receipt has been sent to {donorInfo.email}
             </p>
-
-            <WhatsAppConnect
-              className="w-full justify-center"
-              message={`Hi Suraksha Team, I donated ₹${selectedAmount?.toLocaleString("en-IN")} and my transaction ID is ${txnId}. Please share my 80G certificate.`}
-            />
 
             <div className="flex w-full gap-3">
               <Button
@@ -467,6 +503,74 @@ export default function DonatePage() {
                 </span>
               </label>
 
+              {requires80G ? (
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="mb-3 text-xs text-muted-foreground">
+                    For 80G filing, provide PAN. If PAN is unavailable, provide Aadhaar, Passport, or Voter ID.
+                  </p>
+
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="pan-number">PAN Number</Label>
+                    <Input
+                      id="pan-number"
+                      placeholder="ABCDE1234F"
+                      maxLength={10}
+                      value={donorInfo.panNumber}
+                      onChange={(e) => {
+                        setFormError("")
+                        setDonorInfo({ ...donorInfo, panNumber: e.target.value.toUpperCase() })
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">Format: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F) • Max 10 characters</p>
+                  </div>
+
+                  <p className="my-3 text-center text-xs text-muted-foreground">OR</p>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="flex flex-col gap-2">
+                      <Label>Alternate ID Type</Label>
+                      <Select
+                        value={donorInfo.idProofType || undefined}
+                        onValueChange={(value) => {
+                          setFormError("")
+                          setDonorInfo({ ...donorInfo, idProofType: value as IdProofType })
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose ID" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="aadhaar">Aadhaar</SelectItem>
+                          <SelectItem value="passport">Passport</SelectItem>
+                          <SelectItem value="voterId">Voter ID</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="id-proof-number">Alternate ID Number</Label>
+                      <Input
+                        id="id-proof-number"
+                        placeholder={donorInfo.idProofType === "aadhaar" ? "XXXX-XXXX-XXXX" : donorInfo.idProofType === "passport" ? "A1234567" : "ABC1234567"}
+                        maxLength={donorInfo.idProofType === "aadhaar" ? 14 : donorInfo.idProofType === "passport" ? 8 : 10}
+                        value={donorInfo.idProofNumber}
+                        onChange={(e) => {
+                          setFormError("")
+                          setDonorInfo({ ...donorInfo, idProofNumber: e.target.value })
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {donorInfo.idProofType === "aadhaar" ? "Format: 12 digits with dashes (e.g., 2541-7890-1234) • Max 14 characters" : donorInfo.idProofType === "passport" ? "Format: 1 letter + 7 alphanumerics (e.g., A1234567) • Max 8 characters" : "Format: 3 letters + 7 digits (e.g., ABC1234567) • Max 10 characters"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {formError ? (
+                <p className="text-xs font-medium text-destructive">{formError}</p>
+              ) : null}
+
               <div className="mt-2 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Lock className="size-3.5 shrink-0" />
@@ -481,7 +585,7 @@ export default function DonatePage() {
                 size="lg"
                 className="mt-2 bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
                 onClick={handlePayment}
-                disabled={!donorInfo.name || !donorInfo.email}
+                disabled={!donorInfo.name || !donorInfo.email || (requires80G && !donorInfo.panNumber && !(donorInfo.idProofType && donorInfo.idProofNumber))}
               >
                 <IndianRupee className="mr-1 size-4" />
                 Pay {"₹"} {selectedAmount?.toLocaleString("en-IN")}

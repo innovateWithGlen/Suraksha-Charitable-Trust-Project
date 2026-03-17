@@ -13,6 +13,12 @@ import { toast } from "sonner"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
+const idTypeLabel: Record<string, string> = {
+  aadhaar: "Aadhaar",
+  passport: "Passport",
+  voterId: "Voter ID",
+}
+
 export default function DonationsPage() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -32,11 +38,16 @@ export default function DonationsPage() {
   const { data, isLoading } = useSWR(query, fetcher, { refreshInterval: 5000 })
   const donations = data?.donations || []
 
-  const generateReceipt = async (donationId: string) => {
+  const generateReceipt = async (donation: any) => {
+    if (!donation.is80GIdentityReady) {
+      toast.error("80G identity is incomplete. Capture PAN or alternate ID before generating receipt.")
+      return
+    }
+
     const res = await fetch("/api/certificates/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ donationId, resendEmail: false }),
+      body: JSON.stringify({ donationId: donation._id, resendEmail: false }),
     })
 
     const payload = await res.json().catch(() => ({}))
@@ -160,14 +171,15 @@ export default function DonationsPage() {
                 <TableHead>Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>80G</TableHead>
+                <TableHead>80G Identity</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={8}>Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9}>Loading...</TableCell></TableRow>
               ) : donations.length === 0 ? (
-                <TableRow><TableCell colSpan={8}>No donations found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9}>No donations found</TableCell></TableRow>
               ) : (
                 donations.map((d: any) => (
                   <TableRow key={d._id}>
@@ -197,9 +209,31 @@ export default function DonationsPage() {
                       )}
                     </TableCell>
                     <TableCell>
+                      {d.requires80G ? (
+                        d.is80GIdentityReady ? (
+                          <div className="space-y-1">
+                            <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">Ready</Badge>
+                            <p className="text-[11px] text-muted-foreground">
+                              {d.hasPan ? "PAN" : d.idProofType ? idTypeLabel[d.idProofType] || d.idProofType : "Alternate ID"}
+                            </p>
+                          </div>
+                        ) : (
+                          <Badge variant="destructive">Missing ID</Badge>
+                        )
+                      ) : (
+                        <span className="text-xs text-muted-foreground">N/A</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <div className="flex items-center gap-2">
                         {d.requires80G ? (
-                          <Button size="sm" variant="outline" onClick={() => generateReceipt(d._id)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={!d.is80GIdentityReady}
+                            onClick={() => generateReceipt(d)}
+                            title={!d.is80GIdentityReady ? "Capture PAN or alternate ID first" : undefined}
+                          >
                             <Receipt className="mr-1 size-3" />
                             Generate 80G
                           </Button>

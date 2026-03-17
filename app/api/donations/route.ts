@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
 import { Donation, Donor } from "@/lib/models";
 import { donationSchema, paginationSchema } from "@/lib/validations";
+import { encrypt } from "@/lib/encryption";
+import { isValidIdProofNumber, isValidPanNumber, normalizeIdProofNumber, normalizePanNumber } from "@/lib/identity-format";
 import crypto from "crypto";
 
 // GET /api/donations - List donations with filters
@@ -68,8 +70,38 @@ export async function GET(request: Request) {
       Donation.countDocuments(query),
     ]);
 
+    const donorIds = Array.from(
+      new Set(
+        donations
+          .map((donation) => String(donation.donorId || ""))
+          .filter(Boolean)
+      )
+    );
+
+    const donors = donorIds.length
+      ? await Donor.find({ _id: { $in: donorIds } })
+          .select("_id panNumber idProofType idProofNumber")
+          .lean()
+      : [];
+
+    const donorMap = new Map(donors.map((donor) => [String(donor._id), donor]));
+
+    const enrichedDonations = donations.map((donation) => {
+      const donor = donorMap.get(String(donation.donorId));
+      const hasPan = !!donor?.panNumber;
+      const hasAlternateId = !!donor?.idProofType && !!donor?.idProofNumber;
+
+      return {
+        ...donation,
+        hasPan,
+        hasAlternateId,
+        idProofType: donor?.idProofType || null,
+        is80GIdentityReady: !donation.requires80G || hasPan || hasAlternateId,
+      };
+    });
+
     return NextResponse.json({
-      donations,
+      donations: enrichedDonations,
       pagination: {
         page: params.page,
         limit: params.limit,
@@ -94,6 +126,23 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validated = donationSchema.parse(body);
 
+    const panNumber = normalizePanNumber(validated.panNumber) || "";
+    const idProofType = validated.idProofType || undefined;
+    const idProofNumber =
+      idProofType === "aadhaar"
+        ? normalizeIdProofNumber("aadhaar", validated.idProofNumber) || ""
+        : idProofType
+          ? normalizeIdProofNumber(idProofType, validated.idProofNumber) || ""
+          : "";
+
+    if (panNumber && !isValidPanNumber(panNumber)) {
+      return NextResponse.json({ error: "Invalid PAN number format" }, { status: 400 });
+    }
+
+    if (idProofType && idProofNumber && !isValidIdProofNumber(idProofType, idProofNumber)) {
+      return NextResponse.json({ error: "Invalid alternate ID format" }, { status: 400 });
+    }
+
     // Upsert donor
     const donor = await Donor.findOneAndUpdate(
       { email: validated.donorEmail.toLowerCase() },
@@ -101,6 +150,11 @@ export async function POST(request: Request) {
         $set: {
           name: validated.donorName,
           phone: validated.donorPhone,
+          ...(panNumber && { panNumber: encrypt(panNumber) }),
+          ...(idProofType && idProofNumber && {
+            idProofType,
+            idProofNumber: encrypt(idProofNumber),
+          }),
         },
         $setOnInsert: {
           totalDonated: 0,

@@ -1,25 +1,13 @@
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
 import { auth } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
-import { CSRPledge, CSRProject, CorporateSponsor } from "@/lib/models";
+import { CSRPledge } from "@/lib/models";
+import {
+  recomputeProjectRaisedAmount,
+  upsertCorporateSponsorContribution,
+} from "@/lib/csr-helpers";
 
-async function recomputeProjectRaisedAmount(projectId: string) {
-  const projectObjectId = new mongoose.Types.ObjectId(projectId);
-  const confirmed = await CSRPledge.aggregate([
-    { $match: { projectId: projectObjectId, status: "confirmed" } },
-    { $group: { _id: null, total: { $sum: "$amount" } } },
-  ]);
-
-  const total = confirmed[0]?.total || 0;
-  const project = await CSRProject.findById(projectId).lean();
-  if (!project) return;
-
-  const nextStatus = total >= project.goalAmount ? "Funded" : project.status === "Closed" ? "Closed" : "Open";
-  await CSRProject.findByIdAndUpdate(projectId, {
-    $set: { raisedAmount: total, status: nextStatus },
-  });
-}
+const ALLOWED_PLEDGE_STATUS = new Set(["pledged", "confirmed", "cancelled"]);
 
 export async function PUT(
   request: Request,
@@ -43,27 +31,30 @@ export async function PUT(
     const prevStatus = pledge.status;
 
     if (typeof body.status === "string") {
+      if (!ALLOWED_PLEDGE_STATUS.has(body.status)) {
+        return NextResponse.json({ error: "Invalid pledge status" }, { status: 400 });
+      }
       pledge.status = body.status;
     }
     if (typeof body.notes === "string") {
       pledge.notes = body.notes;
     }
 
+    if (prevStatus !== "confirmed" && pledge.status === "confirmed") {
+      pledge.confirmationDate = new Date();
+    }
+    if (prevStatus === "confirmed" && pledge.status !== "confirmed") {
+      pledge.confirmationDate = undefined;
+    }
+
     await pledge.save();
 
     if (prevStatus !== "confirmed" && pledge.status === "confirmed") {
-      await CorporateSponsor.findOneAndUpdate(
-        { companyName: pledge.companyName.trim(), fiscalYear: pledge.fiscalYear || "2025-26" },
-        {
-          $inc: { totalContributed: pledge.amount },
-          $setOnInsert: {
-            isActive: true,
-            logoUrl: "",
-            fiscalYear: pledge.fiscalYear || "2025-26",
-          },
-        },
-        { upsert: true, new: true }
-      );
+      await upsertCorporateSponsorContribution({
+        companyName: pledge.companyName,
+        fiscalYear: pledge.fiscalYear || "2025-26",
+        amount: pledge.amount,
+      });
     }
 
     await recomputeProjectRaisedAmount(String(pledge.projectId));

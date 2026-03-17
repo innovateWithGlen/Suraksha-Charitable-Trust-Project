@@ -18,9 +18,11 @@ type CSRProjectCardProps = {
 };
 
 export function CSRProjectCard({ project, onPledge }: CSRProjectCardProps) {
+  const goalAmount = Number(project.goalAmount || 0);
+  const raisedAmount = Number(project.raisedAmount || 0);
   const progress =
-    project.goalAmount > 0
-      ? Math.min(100, Math.round((project.raisedAmount / project.goalAmount) * 100))
+    goalAmount > 0
+      ? Math.min(100, Math.round((raisedAmount / goalAmount) * 100))
       : 0;
 
   const statusStyles: Record<string, string> = {
@@ -57,8 +59,8 @@ export function CSRProjectCard({ project, onPledge }: CSRProjectCardProps) {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Raised: ₹{project.raisedAmount.toLocaleString("en-IN")}</span>
-            <span>Goal: ₹{project.goalAmount.toLocaleString("en-IN")}</span>
+            <span>Raised: ₹{raisedAmount.toLocaleString("en-IN")}</span>
+            <span>Goal: ₹{goalAmount.toLocaleString("en-IN")}</span>
           </div>
           <div className="h-2 rounded-full bg-muted">
             <div className="h-2 rounded-full bg-secondary" style={{ width: `${progress}%` }} />

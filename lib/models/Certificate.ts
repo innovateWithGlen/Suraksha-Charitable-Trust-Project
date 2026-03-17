@@ -8,6 +8,8 @@ export interface ICertificate extends Document {
   type: "auto" | "manual";
   donorName: string;
   donorPan?: string;
+  donorIdType?: "aadhaar" | "passport" | "voterId";
+  donorIdNumber?: string;
   amount: number;
   donationDate: Date;
   generatedAt: Date;
@@ -35,6 +37,8 @@ const CertificateSchema = new Schema<ICertificate>(
     type: { type: String, enum: ["auto", "manual"], default: "auto" },
     donorName: { type: String, required: true },
     donorPan: { type: String },
+    donorIdType: { type: String, enum: ["aadhaar", "passport", "voterId"] },
+    donorIdNumber: { type: String },
     amount: { type: Number, required: true },
     donationDate: { type: Date, required: true },
     generatedAt: { type: Date, default: Date.now },

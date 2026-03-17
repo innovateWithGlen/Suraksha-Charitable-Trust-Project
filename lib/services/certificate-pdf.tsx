@@ -9,6 +9,8 @@ type ReceiptPDFData = {
   certificateNumber: string;
   donorName: string;
   donorPan?: string;
+  donorIdType?: "aadhaar" | "passport" | "voterId";
+  donorIdNumber?: string;
   donationDate: Date;
   amount: number;
   transactionId: string;
@@ -76,6 +78,17 @@ const styles = StyleSheet.create({
 function Receipt80GDocument({ data }: { data: ReceiptPDFData }) {
   const trusteeName = data.trusteeName || "Managing Trustee";
   const signedAt = new Date().toISOString();
+  const idLabelMap: Record<"aadhaar" | "passport" | "voterId", string> = {
+    aadhaar: "Aadhaar",
+    passport: "Passport",
+    voterId: "Voter ID",
+  };
+
+  const filingIdentity = data.donorPan
+    ? `PAN: ${data.donorPan}`
+    : data.donorIdType && data.donorIdNumber
+      ? `${idLabelMap[data.donorIdType]}: ${data.donorIdNumber}`
+      : "N/A";
 
   return (
     <Document>
@@ -104,8 +117,8 @@ function Receipt80GDocument({ data }: { data: ReceiptPDFData }) {
             <Text style={styles.value}>{data.donorName}</Text>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>PAN (for Form 10BE)</Text>
-            <Text style={styles.value}>{data.donorPan || "N/A"}</Text>
+            <Text style={styles.label}>Identity for Form 10BE</Text>
+            <Text style={styles.value}>{filingIdentity}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Date of Donation</Text>

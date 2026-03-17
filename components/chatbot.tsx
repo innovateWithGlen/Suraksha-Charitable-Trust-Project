@@ -231,22 +231,40 @@ export function Chatbot() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "group flex size-14 items-center justify-center rounded-full shadow-lg transition-all",
-          "bg-secondary border border-secondary/30",
-          "hover:bg-secondary hover:scale-105"
+          "group relative flex size-16 items-center justify-center rounded-full shadow-lg transition-all",
+          "bg-[#1f78e5] border-[3px] border-[#63acff]",
+          "hover:scale-105"
         )}
         aria-label={isOpen ? "Close chat" : "Open chat"}
       >
         {isOpen ? (
-          <X className="size-6 text-secondary-foreground" />
+          <X className="size-6 text-white" />
         ) : (
-          <Image
-            src="/images/logo.png"
-            alt="Open Suraksha Sahayaka"
-            width={28}
-            height={28}
-            className="rounded-full object-cover"
-          />
+          <>
+            <svg
+              viewBox="0 0 64 64"
+              className="pointer-events-none absolute inset-0 size-full"
+              aria-hidden="true"
+            >
+              <defs>
+                <path id="chatbot-label-top-arc" d="M 10 30 A 22 22 0 0 1 54 30" />
+              </defs>
+              <text fill="#ffffff" className="text-[4.8px] font-black uppercase tracking-[0.12em]">
+                <textPath href="#chatbot-label-top-arc" startOffset="50%" textAnchor="middle">
+                  SURAKSHA SAHAYAKA
+                </textPath>
+              </text>
+            </svg>
+            <span className="flex size-9 items-center justify-center rounded-full bg-white p-1.5 shadow-inner ring-2 ring-[#cfe5ff]">
+              <Image
+                src="/images/logo.png"
+                alt="Open Suraksha Sahayaka"
+                width={24}
+                height={24}
+                className="rounded-full object-cover"
+              />
+            </span>
+          </>
         )}
       </button>
     </div>

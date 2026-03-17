@@ -5,6 +5,8 @@ export interface IDonor extends Document {
   email: string;
   phone: string;
   panNumber?: string; // encrypted
+  idProofType?: "aadhaar" | "passport" | "voterId";
+  idProofNumber?: string; // encrypted
   address?: string;
   city?: string;
   state?: string;
@@ -23,6 +25,8 @@ const DonorSchema = new Schema<IDonor>(
     email: { type: String, required: true, lowercase: true },
     phone: { type: String, required: true },
     panNumber: { type: String }, // stored encrypted
+    idProofType: { type: String, enum: ["aadhaar", "passport", "voterId"] },
+    idProofNumber: { type: String }, // stored encrypted
     address: { type: String },
     city: { type: String },
     state: { type: String },

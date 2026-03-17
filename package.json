@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
     "seed": "tsx lib/seed.ts",
     "seed:demo": "tsx lib/seed-demo-data.ts",
     "seed:csr": "tsx lib/seed-csr.ts",
@@ -82,15 +85,23 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/aria-query": "^5.0.4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
+    "@vitest/coverage-v8": "^4.1.0",
+    "@vitest/ui": "^4.1.0",
+    "jsdom": "^29.0.0",
     "postcss": "^8.5",
     "tailwindcss": "^4.2.0",
     "tsx": "^4.21.0",
     "tw-animate-css": "1.3.3",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

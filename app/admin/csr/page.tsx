@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import useSWR from "swr";
-import { Save, Plus, XCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import useSWR, { mutate as globalMutate } from "swr";
+import { Save, Plus, XCircle, CheckCircle, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,26 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+function getApiErrorMessage(payload: any, fallback: string) {
+  if (typeof payload?.error === "string" && payload.error.trim()) {
+    if (Array.isArray(payload?.details) && payload.details.length > 0) {
+      const firstDetail = payload.details[0];
+      const field = Array.isArray(firstDetail?.path) ? firstDetail.path.join(".") : undefined;
+      const message = typeof firstDetail?.message === "string" ? firstDetail.message : undefined;
+      if (field && message) {
+        return `${field}: ${message}`;
+      }
+      if (message) {
+        return message;
+      }
+    }
+
+    return payload.error;
+  }
+
+  return fallback;
+}
 
 const categories = ["Health", "Education", "Empowerment", "Environment"] as const;
 const statuses = ["Open", "Funded", "Closed"] as const;
@@ -28,21 +48,102 @@ export default function AdminCSRPage() {
   const { data, isLoading, mutate } = useSWR("/api/csr-projects?limit=100", fetcher, {
     refreshInterval: 8000,
   });
+  const { data: dashboardData } = useSWR("/api/csr-dashboard", fetcher, {
+    refreshInterval: 8000,
+  });
+  const { data: pledgesData, mutate: mutatePledges } = useSWR(
+    "/api/csr-pledges?limit=100&sort=createdAt&order=desc",
+    fetcher,
+    { refreshInterval: 8000 }
+  );
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState("");
   const [saving, setSaving] = useState(false);
+  const [projectFeedback, setProjectFeedback] = useState("");
+  const [expenseFeedback, setExpenseFeedback] = useState("");
+  const [expenseSubmitting, setExpenseSubmitting] = useState(false);
+  const [expenseForm, setExpenseForm] = useState({
+    projectId: "",
+    amountPaid: "",
+    details: "",
+    date: new Date().toISOString().slice(0, 10),
+    billDocument: null as File | null,
+  });
 
   const projects = data?.projects || [];
 
+  useEffect(() => {
+    if (!expenseForm.projectId && projects.length > 0) {
+      setExpenseForm((prev) => ({ ...prev, projectId: projects[0]._id }));
+    }
+  }, [projects, expenseForm.projectId]);
+
   const financial = useMemo(() => {
-    const totalBudget = projects.reduce((sum: number, p: any) => sum + (p.goalAmount || 0), 0);
-    const utilizedFunds = projects.reduce((sum: number, p: any) => sum + (p.raisedAmount || 0), 0);
+    const totalBudget = Number(dashboardData?.totalCSRFund || 0);
+    const utilizedFunds = Number(dashboardData?.utilizedFunds || 0);
     const remainingFunds = Math.max(totalBudget - utilizedFunds, 0);
     return { totalBudget, utilizedFunds, remainingFunds };
-  }, [projects]);
+  }, [dashboardData]);
+
+  const submitExpense = async () => {
+    if (!expenseForm.projectId || !expenseForm.amountPaid || !expenseForm.details || !expenseForm.billDocument) {
+      setExpenseFeedback("Expense form requires project, amount, details, and bill document.");
+      return;
+    }
+
+    if (Number(expenseForm.amountPaid) <= 0) {
+      setExpenseFeedback("Amount paid must be greater than 0.");
+      return;
+    }
+
+    setExpenseSubmitting(true);
+    setExpenseFeedback("");
+
+    const payload = new FormData();
+    payload.append("amountPaid", expenseForm.amountPaid);
+    payload.append("details", expenseForm.details);
+    payload.append("date", expenseForm.date);
+    payload.append("billDocument", expenseForm.billDocument);
+
+    const response = await fetch(`/api/csr-projects/${expenseForm.projectId}/expenses`, {
+      method: "POST",
+      body: payload,
+    });
+
+    setExpenseSubmitting(false);
+
+    if (!response.ok) {
+      const resBody = await response.json().catch(() => ({}));
+      setExpenseFeedback(getApiErrorMessage(resBody, "Failed to save expense."));
+      return;
+    }
+
+    setExpenseForm((prev) => ({
+      ...prev,
+      amountPaid: "",
+      details: "",
+      billDocument: null,
+      date: new Date().toISOString().slice(0, 10),
+    }));
+
+    setExpenseFeedback("Expense logged successfully.");
+    await Promise.all([
+      mutate(),
+      globalMutate("/api/csr-dashboard"),
+    ]);
+  };
 
   const submit = async () => {
-    if (!form.title || !form.description || !form.goalAmount) return;
+    if (!form.title || !form.description || !form.goalAmount) {
+      setProjectFeedback("Title, description, and goal amount are required.");
+      return;
+    }
+    if (Number(form.goalAmount) <= 0) {
+      setProjectFeedback("Goal amount must be greater than 0.");
+      return;
+    }
+
+    setProjectFeedback("");
     setSaving(true);
 
     const payload = {
@@ -61,11 +162,19 @@ export default function AdminCSRPage() {
     });
 
     setSaving(false);
-    if (!response.ok) return;
+    if (!response.ok) {
+      const responseBody = await response.json().catch(() => ({}));
+      setProjectFeedback(getApiErrorMessage(responseBody, "Failed to save CSR project."));
+      return;
+    }
 
     setForm(initialForm);
     setEditingId("");
-    mutate();
+    setProjectFeedback(editingId ? "CSR project updated successfully." : "CSR project created successfully.");
+    await Promise.all([
+      mutate(),
+      globalMutate("/api/csr-projects?status=Open&limit=100"),
+    ]);
   };
 
   const closeProject = async (id: string) => {
@@ -73,6 +182,22 @@ export default function AdminCSRPage() {
     if (!response.ok) return;
     mutate();
   };
+
+  const updatePledgeStatus = async (pledgeId: string, status: "confirmed" | "cancelled") => {
+    const response = await fetch(`/api/csr-pledges/${pledgeId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (!response.ok) return;
+    await Promise.all([
+      mutatePledges(),
+      mutate(),
+      globalMutate("/api/csr-dashboard"),
+    ]);
+  };
+
+  const pledges = pledgesData?.pledges || [];
 
   const startEdit = (project: any) => {
     setEditingId(project._id);
@@ -140,6 +265,142 @@ export default function AdminCSRPage() {
               <Button variant="outline" onClick={() => { setEditingId(""); setForm(initialForm); }}><XCircle className="mr-2 size-4" />Cancel Edit</Button>
             ) : null}
           </div>
+
+          {projectFeedback ? <p className="md:col-span-2 text-sm text-muted-foreground">{projectFeedback}</p> : null}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Log Expense</CardTitle>
+          <CardDescription>Record project expenses and upload scanned bill documents.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <Label>Project</Label>
+            <select
+              className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+              value={expenseForm.projectId}
+              onChange={(e) => setExpenseForm((s) => ({ ...s, projectId: e.target.value }))}
+            >
+              <option value="">Select project</option>
+              {projects.map((project: any) => (
+                <option key={project._id} value={project._id}>
+                  {project.title}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <Label>Amount Paid</Label>
+            <Input
+              type="number"
+              min={1}
+              value={expenseForm.amountPaid}
+              onChange={(e) => setExpenseForm((s) => ({ ...s, amountPaid: e.target.value }))}
+            />
+          </div>
+          <div>
+            <Label>Date</Label>
+            <Input
+              type="date"
+              value={expenseForm.date}
+              onChange={(e) => setExpenseForm((s) => ({ ...s, date: e.target.value }))}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <Label>Details</Label>
+            <Textarea
+              rows={2}
+              value={expenseForm.details}
+              onChange={(e) => setExpenseForm((s) => ({ ...s, details: e.target.value }))}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <Label>Bill Document (PDF/Image)</Label>
+            <Input
+              type="file"
+              accept="application/pdf,image/*"
+              onChange={(e) =>
+                setExpenseForm((s) => ({ ...s, billDocument: e.target.files?.[0] || null }))
+              }
+            />
+          </div>
+          <div className="md:col-span-2">
+            <Button onClick={submitExpense} disabled={expenseSubmitting}>
+              {expenseSubmitting ? "Uploading..." : "Save Expense"}
+            </Button>
+          </div>
+          {expenseFeedback ? <p className="md:col-span-2 text-sm text-muted-foreground">{expenseFeedback}</p> : null}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>CSR Pledge Requests</CardTitle>
+          <CardDescription>Review and approve incoming pledge commitments from corporate sponsors.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {pledges.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No pledges yet.</p>
+          ) : null}
+          {pledges.map((pledge: any) => {
+            const project = pledge.projectId;
+            const isPending = pledge.status === "pledged";
+            const statusColor =
+              pledge.status === "confirmed"
+                ? "bg-green-100 text-green-700 hover:bg-green-100"
+                : pledge.status === "cancelled"
+                ? "bg-red-100 text-red-700 hover:bg-red-100"
+                : "bg-yellow-100 text-yellow-700 hover:bg-yellow-100";
+            return (
+              <div key={pledge._id} className="rounded-lg border border-border p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="font-semibold text-foreground">{pledge.companyName}</p>
+                    <p className="text-sm text-muted-foreground">
+                      ₹{Number(pledge.amount).toLocaleString("en-IN")} •{" "}
+                      {typeof project === "object" ? project?.title : project}
+                    </p>
+                    {pledge.contactEmail || pledge.contactPhone ? (
+                      <p className="text-xs text-muted-foreground">
+                        {pledge.contactEmail}{pledge.contactEmail && pledge.contactPhone ? " • " : ""}{pledge.contactPhone}
+                      </p>
+                    ) : null}
+                    {pledge.notes ? (
+                      <p className="text-xs text-muted-foreground italic">{pledge.notes}</p>
+                    ) : null}
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(pledge.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className={statusColor}>
+                      {pledge.status.charAt(0).toUpperCase() + pledge.status.slice(1)}
+                    </Badge>
+                    {isPending ? (
+                      <>
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          onClick={() => updatePledgeStatus(pledge._id, "confirmed")}
+                        >
+                          <CheckCircle className="mr-1 size-3.5" />Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => updatePledgeStatus(pledge._id, "cancelled")}
+                        >
+                          <Ban className="mr-1 size-3.5" />Cancel
+                        </Button>
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </CardContent>
       </Card>
 
@@ -154,7 +415,7 @@ export default function AdminCSRPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="font-semibold text-foreground">{project.title}</p>
-                  <p className="text-sm text-muted-foreground">{project.category} • Goal ₹{project.goalAmount.toLocaleString("en-IN")} • Raised ₹{(project.raisedAmount || 0).toLocaleString("en-IN")}</p>
+                  <p className="text-sm text-muted-foreground">{project.category} • Goal ₹{project.goalAmount.toLocaleString("en-IN")} • Raised ₹{(project.raisedAmount || 0).toLocaleString("en-IN")} • Utilized ₹{(project.utilizedAmount || 0).toLocaleString("en-IN")}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge>{project.status}</Badge>

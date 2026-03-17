@@ -11,6 +11,7 @@ export { default as TrustDocument } from "./TrustDocument";
 export { default as CSRProject } from "./CSRProject";
 export { default as CorporateSponsor } from "./CorporateSponsor";
 export { default as CSRPledge } from "./CSRPledge";
+export { default as CSRExpense } from "./CSRExpense";
 
 export type { IUser } from "./User";
 export type { IDonor } from "./Donor";
@@ -25,3 +26,4 @@ export type { ITrustDocument } from "./TrustDocument";
 export type { ICSRProject } from "./CSRProject";
 export type { ICorporateSponsor } from "./CorporateSponsor";
 export type { ICSRPledge } from "./CSRPledge";
+export type { ICSRExpense } from "./CSRExpense";

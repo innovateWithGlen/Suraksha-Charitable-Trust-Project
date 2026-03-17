@@ -4,6 +4,7 @@ import dbConnect from "@/lib/mongodb";
 import { Donor } from "@/lib/models";
 import { donorSchema, paginationSchema } from "@/lib/validations";
 import { encrypt } from "@/lib/encryption";
+import { isValidIdProofNumber, isValidPanNumber, normalizeIdProofNumber, normalizePanNumber } from "@/lib/identity-format";
 
 // GET /api/donors - List donors with search/filter/pagination
 export async function GET(request: Request) {
@@ -78,10 +79,27 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validated = donorSchema.parse(body);
 
-    // Encrypt PAN number if provided
-    if (validated.panNumber) {
-      validated.panNumber = encrypt(validated.panNumber);
+    const panNumber = normalizePanNumber(validated.panNumber) || "";
+    const idProofType = validated.idProofType || undefined;
+    const idProofNumber =
+      idProofType === "aadhaar"
+        ? normalizeIdProofNumber("aadhaar", validated.idProofNumber) || ""
+        : idProofType
+          ? normalizeIdProofNumber(idProofType, validated.idProofNumber) || ""
+          : "";
+
+    if (panNumber && !isValidPanNumber(panNumber)) {
+      return NextResponse.json({ error: "Invalid PAN number format" }, { status: 400 });
     }
+
+    if (idProofType && idProofNumber && !isValidIdProofNumber(idProofType, idProofNumber)) {
+      return NextResponse.json({ error: "Invalid alternate ID format" }, { status: 400 });
+    }
+
+    // Encrypt PAN number if provided
+    const encryptedPanNumber = panNumber ? encrypt(panNumber) : undefined;
+    const encryptedIdProofNumber =
+      idProofType && idProofNumber ? encrypt(idProofNumber) : undefined;
 
     // Upsert: update if exists (by email), create if new
     const donor = await Donor.findOneAndUpdate(
@@ -90,7 +108,11 @@ export async function POST(request: Request) {
         $set: {
           name: validated.name,
           phone: validated.phone,
-          ...(validated.panNumber && { panNumber: validated.panNumber }),
+          ...(encryptedPanNumber && { panNumber: encryptedPanNumber }),
+          ...(idProofType && encryptedIdProofNumber && {
+            idProofType,
+            idProofNumber: encryptedIdProofNumber,
+          }),
           ...(validated.address && { address: validated.address }),
           ...(validated.city && { city: validated.city }),
           ...(validated.state && { state: validated.state }),

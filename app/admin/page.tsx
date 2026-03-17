@@ -39,6 +39,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
+import { TransactionLog } from "@/components/transactions/transaction-log"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -50,6 +51,12 @@ export default function AdminDashboard() {
   const { data, isLoading, error } = useSWR(query, fetcher, {
     refreshInterval: 5000,
   })
+
+  const { data: csrTransactionsData, isLoading: csrTransactionsLoading } = useSWR(
+    "/api/csr-transactions?limit=50",
+    fetcher,
+    { refreshInterval: 5000 }
+  )
 
   if (error) {
     return (
@@ -64,6 +71,7 @@ export default function AdminDashboard() {
   const donationTrend = data?.donationTrend || []
   const donorGrowth = data?.donorGrowth || []
   const recentDonations = data?.recentDonations || []
+  const csrTransactions = csrTransactionsData?.transactions || []
 
   const metricCards = [
     {
@@ -262,6 +270,22 @@ export default function AdminDashboard() {
                 ))}
               </TableBody>
             </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>CSR Financial Activity</CardTitle>
+          <CardDescription>Incoming pledges and outgoing expenses in real time</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {csrTransactionsLoading ? (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (<Skeleton key={i} className="h-12 w-full" />))}
+            </div>
+          ) : (
+            <TransactionLog transactions={csrTransactions} />
           )}
         </CardContent>
       </Card>

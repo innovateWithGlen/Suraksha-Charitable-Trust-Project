@@ -329,6 +329,53 @@ export async function send80GReceiptEmail(params: {
   }
 }
 
+export async function sendCSRPledgeAdminNotification(pledge: {
+  companyName: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  amount: number;
+  projectTitle: string;
+  fiscalYear?: string;
+  notes?: string;
+}) {
+  const adminEmail = process.env.ADMIN_EMAIL || "glenmonteiro47@gmail.com";
+  const formattedAmount = pledge.amount.toLocaleString("en-IN");
+
+  const response = await sendWithRecipientFallback({
+    from: FROM_EMAIL,
+    to: adminEmail,
+    subject: `New CSR Pledge: ₹${formattedAmount} from ${escapeHtml(pledge.companyName)}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: #1a365d; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 24px;">
+          <h1 style="color: white; margin: 0; font-size: 22px;">Suraksha Charitable Trust</h1>
+        </div>
+        <h2 style="color: #1a365d;">New CSR Pledge Received</h2>
+        <p style="color: #334155;">A new CSR pledge has been submitted and requires your review.</p>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin: 20px 0;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="padding: 8px 0; color: #64748b; width: 140px;">Company</td><td style="padding: 8px 0; color: #1a365d; font-weight: bold;">${escapeHtml(pledge.companyName)}</td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b;">Project</td><td style="padding: 8px 0; color: #1a365d;">${escapeHtml(pledge.projectTitle)}</td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b;">Pledge Amount</td><td style="padding: 8px 0; color: #1a365d; font-weight: bold;">₹${formattedAmount}</td></tr>
+            <tr><td style="padding: 8px 0; color: #64748b;">Fiscal Year</td><td style="padding: 8px 0; color: #1a365d;">${escapeHtml(pledge.fiscalYear || "2025-26")}</td></tr>
+            ${pledge.contactEmail ? `<tr><td style="padding: 8px 0; color: #64748b;">Contact Email</td><td style="padding: 8px 0; color: #1a365d;">${escapeHtml(pledge.contactEmail)}</td></tr>` : ""}
+            ${pledge.contactPhone ? `<tr><td style="padding: 8px 0; color: #64748b;">Contact Phone</td><td style="padding: 8px 0; color: #1a365d;">${escapeHtml(pledge.contactPhone)}</td></tr>` : ""}
+            ${pledge.notes ? `<tr><td style="padding: 8px 0; color: #64748b; vertical-align: top;">Notes</td><td style="padding: 8px 0; color: #1a365d;">${escapeHtml(pledge.notes)}</td></tr>` : ""}
+          </table>
+        </div>
+        <div style="text-align: center; margin: 24px 0;">
+          <a href="${toAbsoluteUrl("/admin/csr")}" style="background: #1a365d; color: white; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: bold; display: inline-block;">Review in Admin Panel</a>
+        </div>
+        <p style="color: #94a3b8; font-size: 12px; text-align: center;">Suraksha Charitable Trust — CSR Administration</p>
+      </div>
+    `,
+  });
+
+  if ((response as any)?.error) {
+    console.error("Failed to send CSR pledge admin notification:", (response as any).error);
+  }
+}
+
 export async function sendInquiryReplyEmail(params: {
   toEmail: string;
   toName: string;

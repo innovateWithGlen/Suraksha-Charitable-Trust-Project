@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { IdProofType, isValidIdProofNumber, isValidPanNumber } from "@/lib/identity-format";
+
+const idProofTypeSchema = z.enum(["aadhaar", "passport", "voterId"]);
 
 // Auth schemas
 export const loginSchema = z.object({
@@ -16,27 +19,71 @@ export const otpVerifySchema = z.object({
 });
 
 // Donor schemas
-export const donorSchema = z.object({
+const donorSchemaBase = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   phone: z
     .string()
     .min(10, "Phone must be at least 10 digits")
     .regex(/^[0-9+\-\s()]+$/, "Invalid phone number"),
-  panNumber: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, "Invalid PAN number").optional().or(z.literal("")),
+  panNumber: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .refine((value) => !value || isValidPanNumber(value), "Invalid PAN number"),
+  idProofType: idProofTypeSchema.optional().or(z.literal("")),
+  idProofNumber: z.string().min(6, "ID number is too short").max(20, "ID number is too long").optional().or(z.literal("")),
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
   pincode: z.string().optional(),
 });
 
-export const donorUpdateSchema = donorSchema.partial();
+function validateDonorIdFields(
+  data: { idProofType?: IdProofType | ""; idProofNumber?: string | "" },
+  ctx: z.RefinementCtx
+) {
+  const hasType = !!data.idProofType;
+  const hasNumber = !!data.idProofNumber;
+
+  if (hasType !== hasNumber) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["idProofNumber"],
+      message: "Provide both ID proof type and number",
+    });
+    return;
+  }
+
+  if (data.idProofType && data.idProofNumber && !isValidIdProofNumber(data.idProofType, data.idProofNumber)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["idProofNumber"],
+      message: "Invalid ID proof number format",
+    });
+  }
+}
+
+export const donorSchema = donorSchemaBase.superRefine((data, ctx) => {
+  validateDonorIdFields(data, ctx);
+});
+
+export const donorUpdateSchema = donorSchemaBase.partial().superRefine((data, ctx) => {
+  validateDonorIdFields(data, ctx);
+});
 
 // Donation schemas
 export const donationSchema = z.object({
   donorName: z.string().min(2),
   donorEmail: z.string().email(),
   donorPhone: z.string().min(10),
+  panNumber: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .refine((value) => !value || isValidPanNumber(value), "Invalid PAN number"),
+  idProofType: idProofTypeSchema.optional().or(z.literal("")),
+  idProofNumber: z.string().min(6, "ID number is too short").max(20, "ID number is too long").optional().or(z.literal("")),
   amount: z.number().min(100, "Minimum donation is ₹100"),
   requires80G: z.boolean().optional().default(false),
   method: z.enum(["upi", "card", "netbanking", "wallet", "other"]).default("other"),
@@ -47,6 +94,39 @@ export const donationSchema = z.object({
       code: z.ZodIssueCode.custom,
       path: ["amount"],
       message: "Minimum donation is ₹5,000 when 80G certificate is requested",
+    });
+  }
+
+  const hasPan = !!data.panNumber;
+  const hasAltType = !!data.idProofType;
+  const hasAltNumber = !!data.idProofNumber;
+
+  if (hasAltType !== hasAltNumber) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["idProofNumber"],
+      message: "Provide both ID proof type and number",
+    });
+  }
+
+  if (data.idProofType && data.idProofNumber && !isValidIdProofNumber(data.idProofType, data.idProofNumber)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["idProofNumber"],
+      message: "Invalid ID proof number format",
+    });
+  }
+
+  if (data.requires80G && !hasPan && !(hasAltType && hasAltNumber)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["panNumber"],
+      message: "PAN is required for 80G filing, or provide Aadhaar/Passport/Voter ID",
+    });
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["idProofNumber"],
+      message: "If PAN is unavailable, provide Aadhaar/Passport/Voter ID",
     });
   }
 });
@@ -118,6 +198,7 @@ export const csrProjectSchema = z.object({
   category: z.enum(["Health", "Education", "Empowerment", "Environment"]),
   goalAmount: z.number().min(1, "Goal amount must be greater than 0"),
   raisedAmount: z.number().min(0).optional().default(0),
+  utilizedAmount: z.number().min(0).optional().default(0),
   coverImageUrl: z.string().url().optional().or(z.literal("")),
   status: z.enum(["Open", "Funded", "Closed"]).default("Open"),
   fiscalYear: z.string().optional().default("2025-26"),
@@ -149,8 +230,18 @@ export const csrPledgeSchema = z.object({
     .default("pledged"),
   contactName: z.string().optional(),
   contactEmail: z.string().email().optional().or(z.literal("")),
+  contactPhone: z.string().optional(),
   notes: z.string().optional(),
+  confirmationDate: z.date().optional(),
   fiscalYear: z.string().optional().default("2025-26"),
+});
+
+export const csrExpenseSchema = z.object({
+  projectId: z.string().min(1, "Project is required"),
+  amountPaid: z.number().min(1, "Amount paid must be greater than 0"),
+  details: z.string().min(3, "Expense details are required"),
+  date: z.coerce.date(),
+  billDocumentUrl: z.string().url().optional().or(z.literal("")),
 });
 
 // Certificate schemas

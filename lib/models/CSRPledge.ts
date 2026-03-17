@@ -7,7 +7,9 @@ export interface ICSRPledge extends Document {
   status: "pledged" | "confirmed" | "cancelled";
   contactName?: string;
   contactEmail?: string;
+  contactPhone?: string;
   notes?: string;
+  confirmationDate?: Date;
   fiscalYear: string;
   createdAt: Date;
   updatedAt: Date;
@@ -26,7 +28,9 @@ const CSRPledgeSchema = new Schema<ICSRPledge>(
     },
     contactName: { type: String },
     contactEmail: { type: String, lowercase: true },
+    contactPhone: { type: String },
     notes: { type: String },
+    confirmationDate: { type: Date },
     fiscalYear: { type: String, default: "2025-26", index: true },
   },
   { timestamps: true }

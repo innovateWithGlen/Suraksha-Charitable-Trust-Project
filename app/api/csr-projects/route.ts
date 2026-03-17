@@ -70,7 +70,17 @@ export async function POST(request: Request) {
 
     await dbConnect();
     const body = await request.json();
-    const validated = csrProjectSchema.parse(body);
+    const validated = csrProjectSchema.parse({
+      ...body,
+      title: typeof body.title === "string" ? body.title.trim() : body.title,
+      description: typeof body.description === "string" ? body.description.trim() : body.description,
+      category: typeof body.category === "string" ? body.category.trim() : body.category,
+      status: typeof body.status === "string" ? body.status.trim() : body.status,
+      goalAmount: Number(body.goalAmount),
+      raisedAmount: body.raisedAmount != null ? Number(body.raisedAmount) : undefined,
+      utilizedAmount: body.utilizedAmount != null ? Number(body.utilizedAmount) : undefined,
+      coverImageUrl: typeof body.coverImageUrl === "string" ? body.coverImageUrl.trim() : body.coverImageUrl,
+    });
 
     const project = await CSRProject.create({
       ...validated,
@@ -82,7 +92,19 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("POST /api/csr-projects error:", error);
     if (error?.name === "ZodError") {
-      return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });
+      const firstIssue = error.errors?.[0];
+      const field = Array.isArray(firstIssue?.path) ? firstIssue.path.join(".") : undefined;
+      const message = firstIssue?.message || "Validation failed";
+      return NextResponse.json(
+        {
+          error: field ? `${field}: ${message}` : message,
+          details: error.errors,
+        },
+        { status: 400 }
+      );
+    }
+    if (error?.code === 11000) {
+      return NextResponse.json({ error: "A CSR project with similar unique fields already exists" }, { status: 409 });
     }
     return NextResponse.json({ error: "Failed to create CSR project" }, { status: 500 });
   }

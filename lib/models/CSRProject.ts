@@ -6,6 +6,7 @@ export interface ICSRProject extends Document {
   category: "Health" | "Education" | "Empowerment" | "Environment";
   goalAmount: number;
   raisedAmount: number;
+  utilizedAmount: number;
   coverImageUrl?: string;
   status: "Open" | "Funded" | "Closed";
   fiscalYear: string;
@@ -31,6 +32,7 @@ const CSRProjectSchema = new Schema<ICSRProject>(
     },
     goalAmount: { type: Number, required: true, min: 1 },
     raisedAmount: { type: Number, default: 0, min: 0 },
+    utilizedAmount: { type: Number, default: 0, min: 0 },
     coverImageUrl: { type: String },
     status: {
       type: String,
