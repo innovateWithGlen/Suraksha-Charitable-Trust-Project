@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
-import { CSRProject } from "@/lib/models";
+import { CSRExpense, CSRPledge, CSRProject } from "@/lib/models";
 import { csrProjectUpdateSchema } from "@/lib/validations";
 
 export async function GET(
@@ -80,19 +80,30 @@ export async function DELETE(
     await dbConnect();
     const { id } = await params;
 
-    const project = await CSRProject.findByIdAndUpdate(
-      id,
-      { $set: { status: "Closed" } },
-      { new: true }
-    ).lean();
+    const [project, expenseCount, pledgeCount] = await Promise.all([
+      CSRProject.findById(id).lean(),
+      CSRExpense.countDocuments({ projectId: id }),
+      CSRPledge.countDocuments({ projectId: id }),
+    ]);
 
     if (!project) {
       return NextResponse.json({ error: "CSR project not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ message: "CSR project closed", project });
+    if (expenseCount > 0 || pledgeCount > 0) {
+      return NextResponse.json(
+        {
+          error: "This project cannot be deleted because it already has linked expenses or pledges. Close it instead.",
+        },
+        { status: 409 }
+      );
+    }
+
+    await CSRProject.findByIdAndDelete(id);
+
+    return NextResponse.json({ message: "CSR project deleted" });
   } catch (error) {
     console.error("DELETE /api/csr-projects/[id] error:", error);
-    return NextResponse.json({ error: "Failed to close CSR project" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete CSR project" }, { status: 500 });
   }
 }
