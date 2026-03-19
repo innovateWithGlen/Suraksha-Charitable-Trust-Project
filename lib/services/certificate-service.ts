@@ -193,13 +193,15 @@ export async function resendReceiptEmail(certificateId: string) {
   const donation = await Donation.findById(certificate.donationId).lean();
   if (!donation) throw new Error("Donation not found");
 
+  const canonicalReceiptUrl = `/api/certificates/${String(certificate._id)}/download`;
+
   await send80GReceiptEmail({
     donor: { name: donation.donorName, email: donation.donorEmail },
     transactionId: donation.transactionId,
     amount: donation.amount,
     certificateNumber: certificate.certificateNumber,
     urnUsed: certificate.urnUsed,
-    pdfUrl: certificate.pdfUrl,
+    pdfUrl: canonicalReceiptUrl,
   });
 
   const now = new Date();
@@ -210,6 +212,7 @@ export async function resendReceiptEmail(certificateId: string) {
         receiptSent: true,
         receiptSentAt: now,
         lastResentAt: now,
+        pdfUrl: canonicalReceiptUrl,
       },
       $inc: { resendCount: 1 },
     }

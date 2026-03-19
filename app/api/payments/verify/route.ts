@@ -128,6 +128,7 @@ export async function POST(request: Request) {
         amount: donation.amount,
         method: donation.method,
         createdAt: donation.createdAt,
+        requires80G: donation.requires80G,
       }
     ).catch((err) =>
       console.error("Failed to send donation confirmation email:", err)

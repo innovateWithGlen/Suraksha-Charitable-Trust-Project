@@ -20,6 +20,24 @@ const idTypeLabel: Record<string, string> = {
   voterId: "Voter ID",
 }
 
+function resolveReceiptDownloadUrl(pathOrUrl?: string) {
+  if (!pathOrUrl) return ""
+
+  if (/^https?:\/\//i.test(pathOrUrl)) {
+    try {
+      const parsed = new URL(pathOrUrl)
+      if (parsed.pathname.startsWith("/api/certificates/")) {
+        return `${window.location.origin}${parsed.pathname}${parsed.search}`
+      }
+      return pathOrUrl
+    } catch {
+      return pathOrUrl
+    }
+  }
+
+  return pathOrUrl
+}
+
 export default function DonationsPage() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -130,11 +148,11 @@ export default function DonationsPage() {
   }
 
   const openReceipt = async (donationId: string, fallbackUrl?: string) => {
-    let resolvedUrl = fallbackUrl
+    let resolvedUrl = resolveReceiptDownloadUrl(fallbackUrl)
 
     if (!resolvedUrl) {
       const certificate = await getLatestCertificate(donationId)
-      resolvedUrl = certificate?.pdfUrl
+      resolvedUrl = resolveReceiptDownloadUrl(certificate?.pdfUrl)
     }
 
     if (!resolvedUrl) {

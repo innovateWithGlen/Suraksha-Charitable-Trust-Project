@@ -36,6 +36,24 @@ function toAbsoluteReceiptUrl(pathOrUrl: string): string {
   return `${normalizedBase}${normalizedPath}`;
 }
 
+function resolveReceiptDownloadUrl(pathOrUrl: string): string {
+  if (!pathOrUrl) return "";
+
+  if (/^https?:\/\//i.test(pathOrUrl)) {
+    try {
+      const parsed = new URL(pathOrUrl);
+      if (parsed.pathname.startsWith("/api/certificates/")) {
+        return `${window.location.origin}${parsed.pathname}${parsed.search}`;
+      }
+      return pathOrUrl;
+    } catch {
+      return pathOrUrl;
+    }
+  }
+
+  return toAbsoluteReceiptUrl(pathOrUrl);
+}
+
 export default function TaxDocumentationPage() {
   const [search, setSearch] = useState("");
 
@@ -61,7 +79,7 @@ export default function TaxDocumentationPage() {
   };
 
   const openManualEmail = (item: any) => {
-    const receiptUrl = toAbsoluteReceiptUrl(item.pdfUrl);
+    const receiptUrl = resolveReceiptDownloadUrl(item.pdfUrl);
     const subject = `80G Receipt ${item.certificateNumber} | Suraksha Charitable Trust`;
     const body =
       `Dear ${item.donorName},\n\nPlease find your 80G receipt below:\n${receiptUrl}\n\nRegards,\nSuraksha Charitable Trust`
@@ -153,7 +171,12 @@ export default function TaxDocumentationPage() {
                           <DropdownMenuItem
                             onSelect={(event) => {
                               event.preventDefault();
-                              window.open(item.pdfUrl, "_blank", "noopener,noreferrer");
+                              const url = resolveReceiptDownloadUrl(item.pdfUrl);
+                              if (!url) {
+                                toast.error("No receipt available for download");
+                                return;
+                              }
+                              window.open(url, "_blank", "noopener,noreferrer");
                             }}
                           >
                             <Download className="size-3.5" />

@@ -119,6 +119,7 @@ export async function sendDonationConfirmation(
     amount: number;
     method: string;
     createdAt: Date;
+    requires80G?: boolean;
   }
 ) {
   const formattedAmount = donation.amount.toLocaleString("en-IN");
@@ -154,8 +155,10 @@ export async function sendDonationConfirmation(
             <tr><td style="padding: 8px 0; color: #64748b;">Date</td><td style="padding: 8px 0; color: #1a365d; text-align: right;">${formattedDate}</td></tr>
           </table>
         </div>
+
+        <p style="color: #334155;">This email serves as your donation receipt.</p>
         
-        <p style="color: #334155;">Your 80G tax exemption certificate will be sent to you shortly.</p>
+        ${donation.requires80G ? '<p style="color: #334155;">Your 80G tax exemption certificate will be sent to you shortly.</p>' : ""}
         
         <div style="text-align: center; margin: 30px 0;">
           <p style="color: #94a3b8; font-size: 12px;">
