@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Menu, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -27,6 +27,11 @@ const navLinks = [
 export function Navbar() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border">
@@ -83,54 +88,66 @@ export function Navbar() {
         </div>
 
         {/* Mobile menu */}
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu">
-              <Menu className="size-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-72">
-            <SheetHeader>
-              <SheetTitle className="flex items-center gap-2">
-                <Image
-                  src="/images/logo.png"
-                  alt="Suraksha Charitable Trust logo"
-                  width={32}
-                  height={32}
-                />
-                Suraksha Trust
-              </SheetTitle>
-            </SheetHeader>
-            <nav className="flex flex-col gap-1 px-4" aria-label="Mobile navigation">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setOpen(false)}
-                  className={cn(
-                    "rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                    pathname === link.href
-                      ? "bg-primary/10 text-secondary"
-                      : "text-foreground/80 hover:bg-muted"
-                  )}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <div className="mt-4 px-3">
-                <Button
-                  asChild
-                  className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
-                >
-                  <Link href="/donate" onClick={() => setOpen(false)} className="flex items-center gap-2">
-                    Donate Now
-                    <ArrowRight className="size-4" />
+        {mounted ? (
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu">
+                <Menu className="size-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-72">
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  <Image
+                    src="/images/logo.png"
+                    alt="Suraksha Charitable Trust logo"
+                    width={32}
+                    height={32}
+                  />
+                  Suraksha Trust
+                </SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col gap-1 px-4" aria-label="Mobile navigation">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      "rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                      pathname === link.href
+                        ? "bg-primary/10 text-secondary"
+                        : "text-foreground/80 hover:bg-muted"
+                    )}
+                  >
+                    {link.label}
                   </Link>
-                </Button>
-              </div>
-            </nav>
-          </SheetContent>
-        </Sheet>
+                ))}
+                <div className="mt-4 px-3">
+                  <Button
+                    asChild
+                    className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
+                  >
+                    <Link href="/donate" onClick={() => setOpen(false)} className="flex items-center gap-2">
+                      Donate Now
+                      <ArrowRight className="size-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </nav>
+            </SheetContent>
+          </Sheet>
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            aria-label="Open menu"
+            disabled
+          >
+            <Menu className="size-5" />
+          </Button>
+        )}
       </div>
     </header>
   )

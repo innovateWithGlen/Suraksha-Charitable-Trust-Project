@@ -20,6 +20,7 @@ export async function POST(request: Request) {
     }
 
     const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
+    const isDemoMode = !razorpaySecret;
 
     if (razorpaySecret) {
       const body = `${razorpay_order_id}|${razorpay_payment_id}`;
@@ -41,6 +42,31 @@ export async function POST(request: Request) {
     await dbConnect();
 
     const resolvedTxnId = razorpay_payment_id || `demo_pay_${Date.now()}`;
+
+    if (isDemoMode) {
+      const settledCount = await Donation.countDocuments({
+        status: { $in: ["completed", "success", "failed"] },
+      });
+      const shouldFailThisAttempt = (settledCount + 1) % 5 === 0;
+
+      if (shouldFailThisAttempt) {
+        await Donation.findByIdAndUpdate(donationId, {
+          $set: {
+            status: "failed",
+            transactionId: resolvedTxnId,
+            razorpayPaymentId: razorpay_payment_id || undefined,
+            razorpaySignature: razorpay_signature || undefined,
+            method: "other",
+            notes: "Demo rule: every 5th transaction fails",
+          },
+        });
+
+        return NextResponse.json(
+          { error: "Demo failure: every 5th transaction is marked as failed" },
+          { status: 402 }
+        );
+      }
+    }
 
     // Update donation status
     const donation = await Donation.findByIdAndUpdate(

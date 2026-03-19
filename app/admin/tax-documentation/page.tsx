@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import useSWR, { mutate } from "swr";
-import { Download, RefreshCw, Search } from "lucide-react";
+import { Download, RefreshCw, Search, ChevronDown } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -22,6 +23,17 @@ function maskIdentity(value?: string) {
   if (!value) return "-";
   const visible = value.slice(-4);
   return `XXXX${visible}`;
+}
+
+function toAbsoluteReceiptUrl(pathOrUrl: string): string {
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+
+  const configuredBase = process.env.NEXT_PUBLIC_APP_URL || "";
+  const base = configuredBase || window.location.origin || "";
+  const normalizedBase = base.endsWith("/") ? base.slice(0, -1) : base;
+  const normalizedPath = pathOrUrl.startsWith("/") ? pathOrUrl : `/${pathOrUrl}`;
+
+  return `${normalizedBase}${normalizedPath}`;
 }
 
 export default function TaxDocumentationPage() {
@@ -49,8 +61,7 @@ export default function TaxDocumentationPage() {
   };
 
   const openManualEmail = (item: any) => {
-    const baseUrl = window.location.origin || process.env.NEXT_PUBLIC_APP_URL;
-    const receiptUrl = `${baseUrl}${item.pdfUrl}`;
+    const receiptUrl = toAbsoluteReceiptUrl(item.pdfUrl);
     const subject = `80G Receipt ${item.certificateNumber} | Suraksha Charitable Trust`;
     const body =
       `Dear ${item.donorName},\n\nPlease find your 80G receipt below:\n${receiptUrl}\n\nRegards,\nSuraksha Charitable Trust`
@@ -131,21 +142,42 @@ export default function TaxDocumentationPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button size="sm" variant="outline" asChild>
-                          <a href={item.pdfUrl} target="_blank" rel="noreferrer">
-                            <Download className="mr-1 size-3" />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="outline" className="gap-1">
+                            Manage
+                            <ChevronDown className="size-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          <DropdownMenuItem
+                            onSelect={(event) => {
+                              event.preventDefault();
+                              window.open(item.pdfUrl, "_blank", "noopener,noreferrer");
+                            }}
+                          >
+                            <Download className="size-3.5" />
                             Download
-                          </a>
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => resend(item._id)}>
-                          <RefreshCw className="mr-1 size-3" />
-                          Re-send
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => openManualEmail(item)}>
-                          Manual Email
-                        </Button>
-                      </div>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={(event) => {
+                              event.preventDefault();
+                              void resend(item._id);
+                            }}
+                          >
+                            <RefreshCw className="size-3.5" />
+                            Resend
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={(event) => {
+                              event.preventDefault();
+                              openManualEmail(item);
+                            }}
+                          >
+                            Manual Email
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))

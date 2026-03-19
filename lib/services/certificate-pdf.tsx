@@ -1,8 +1,8 @@
 import React from "react";
 import path from "node:path";
 import { promises as fs } from "node:fs";
-import ReactPDF from "@react-pdf/renderer";
-const { Document, Page, Text, View, StyleSheet, Image, renderToBuffer } = ReactPDF;
+import { Document, Page, Text, View, StyleSheet, Image, pdf } from "@react-pdf/renderer";
+import type { Readable } from "node:stream";
 
 type ReceiptPDFData = {
   trustName: string;
@@ -174,5 +174,23 @@ export async function generate80GReceiptPDFBuffer(data: ReceiptPDFData): Promise
   const logoDataUri = await getLogoDataUri();
   const trusteeName = process.env.TRUSTEE_SIGNATORY_NAME || "Rajesh Hegde";
   const doc = <Receipt80GDocument data={{ ...data, logoDataUri, trusteeName }} />;
-  return renderToBuffer(doc);
+
+  const pdfResult = await pdf(doc).toBuffer();
+
+  if (Buffer.isBuffer(pdfResult)) {
+    return pdfResult;
+  }
+
+  const stream = pdfResult as Readable;
+  const chunks: Buffer[] = [];
+
+  await new Promise<void>((resolve, reject) => {
+    stream.on("data", (chunk) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    });
+    stream.on("end", () => resolve());
+    stream.on("error", (error) => reject(error));
+  });
+
+  return Buffer.concat(chunks);
 }

@@ -41,6 +41,24 @@ const presetAmounts = [500, 1000, 1500, 2000, 5000, 10000]
 
 type DonationStep = "select" | "details" | "processing" | "success" | "failure"
 
+const normalizeIndianPhone = (value: string) => {
+  const digitsOnly = value.replace(/\D/g, "")
+  const withoutCountryCode = digitsOnly.startsWith("91")
+    ? digitsOnly.slice(2)
+    : digitsOnly
+  const localTenDigits = withoutCountryCode.slice(0, 10)
+
+  return localTenDigits ? `+91${localTenDigits}` : ""
+}
+
+const formatAadhaarInput = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 12)
+  if (!digits) return ""
+
+  const chunks = [digits.slice(0, 4), digits.slice(4, 8), digits.slice(8, 12)].filter(Boolean)
+  return chunks.join("-")
+}
+
 export default function DonatePage() {
   const [step, setStep] = useState<DonationStep>("select")
   const [amount, setAmount] = useState<number | null>(1000)
@@ -87,6 +105,7 @@ export default function DonatePage() {
   }
 
   const handlePayment = async () => {
+    const normalizedPhone = normalizeIndianPhone(donorInfo.phone)
     const panNumber = normalizePanNumber(donorInfo.panNumber) || ""
     const idProofType = donorInfo.idProofType
     const idProofNumber = idProofType
@@ -94,6 +113,11 @@ export default function DonatePage() {
       : donorInfo.idProofNumber.trim()
 
     if (!donorInfo.name || !donorInfo.email || !selectedAmount || selectedAmount < minimumAmount) return
+
+    if (normalizedPhone && !/^\+91\d{10}$/.test(normalizedPhone)) {
+      setFormError("Enter a valid phone number with 10 digits")
+      return
+    }
 
     if (requires80G) {
       const hasPan = !!panNumber
@@ -126,7 +150,7 @@ export default function DonatePage() {
         body: JSON.stringify({
           donorName: donorInfo.name,
           donorEmail: donorInfo.email,
-          donorPhone: donorInfo.phone,
+          donorPhone: normalizedPhone,
           panNumber,
           idProofType: idProofType || undefined,
           idProofNumber: idProofNumber || undefined,
@@ -196,7 +220,7 @@ export default function DonatePage() {
         prefill: {
           name: donorInfo.name,
           email: donorInfo.email,
-          contact: donorInfo.phone,
+          contact: normalizedPhone,
         },
         theme: {
           color: "#1a365d",
@@ -483,12 +507,15 @@ export default function DonatePage() {
                 <Input
                   id="donor-phone"
                   type="tel"
-                  placeholder="+91 99999-00000"
+                  placeholder="+91XXXXXXXXXX"
+                  maxLength={13}
                   value={donorInfo.phone}
-                  onChange={(e) =>
-                    setDonorInfo({ ...donorInfo, phone: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setFormError("")
+                    setDonorInfo({ ...donorInfo, phone: normalizeIndianPhone(e.target.value) })
+                  }}
                 />
+                <p className="text-xs text-muted-foreground">Only 10 digits are allowed after +91</p>
               </div>
 
               <label className="flex items-start gap-3 rounded-lg border border-border bg-muted/40 p-3 text-sm">
@@ -556,7 +583,22 @@ export default function DonatePage() {
                         value={donorInfo.idProofNumber}
                         onChange={(e) => {
                           setFormError("")
-                          setDonorInfo({ ...donorInfo, idProofNumber: e.target.value })
+                          const value = e.target.value
+
+                          if (donorInfo.idProofType === "aadhaar") {
+                            setDonorInfo({ ...donorInfo, idProofNumber: formatAadhaarInput(value) })
+                            return
+                          }
+
+                          if (donorInfo.idProofType === "passport" || donorInfo.idProofType === "voterId") {
+                            setDonorInfo({
+                              ...donorInfo,
+                              idProofNumber: value.toUpperCase().replace(/\s+/g, ""),
+                            })
+                            return
+                          }
+
+                          setDonorInfo({ ...donorInfo, idProofNumber: value })
                         }}
                       />
                       <p className="text-xs text-muted-foreground">

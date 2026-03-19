@@ -1,18 +1,36 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
-import { CSRExpense, CSRPledge } from "@/lib/models";
+import { CSRExpense, CSRPledge, Donation } from "@/lib/models";
 
 type TransactionItem = {
   id: string;
   date: string;
-  type: "pledge" | "expense";
+  type: "pledge" | "expense" | "transfer";
   projectName: string;
   entity: string;
   amount: number;
   status?: string;
   billDocumentUrl?: string;
 };
+
+function parseTransferMeta(notes?: string) {
+  if (!notes?.startsWith("CSR_INTERNAL_TRANSFER|")) return null;
+
+  const rawParts = notes.split("|").slice(1);
+  const map: Record<string, string> = {};
+
+  for (const part of rawParts) {
+    const [key, ...rest] = part.split("=");
+    if (!key) continue;
+    map[key] = rest.join("=");
+  }
+
+  return {
+    projectTitle: map.projectTitle || "Deleted CSR Project",
+    note: map.note || "",
+  };
+}
 
 export async function GET(request: Request) {
   try {
@@ -26,7 +44,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const limit = Math.min(Math.max(Number(searchParams.get("limit") || 50), 1), 200);
 
-    const [pledges, expenses] = await Promise.all([
+    const [pledges, expenses, transfers] = await Promise.all([
       CSRPledge.find({ status: { $in: ["pledged", "confirmed", "cancelled"] } })
         .sort({ createdAt: -1 })
         .limit(limit)
@@ -36,6 +54,10 @@ export async function GET(request: Request) {
         .sort({ date: -1, createdAt: -1 })
         .limit(limit)
         .populate("projectId", "title")
+        .lean(),
+      Donation.find({ notes: { $regex: /^CSR_INTERNAL_TRANSFER\|/ } })
+        .sort({ createdAt: -1 })
+        .limit(limit)
         .lean(),
     ]);
 
@@ -59,7 +81,24 @@ export async function GET(request: Request) {
       billDocumentUrl: expense.billDocumentUrl || undefined,
     }));
 
-    const transactions = [...pledgeRows, ...expenseRows]
+    const transferRows: TransactionItem[] = transfers
+      .map((transfer: any) => {
+        const meta = parseTransferMeta(transfer.notes);
+        if (!meta) return null;
+
+        return {
+          id: `transfer-${transfer._id}`,
+          date: new Date(transfer.createdAt).toISOString(),
+          type: "transfer" as const,
+          projectName: meta.projectTitle,
+          entity: meta.note ? `Internal transfer • ${meta.note}` : "Internal transfer to total donations",
+          amount: Number(transfer.amount || 0),
+          status: transfer.status,
+        };
+      })
+      .filter(Boolean) as TransactionItem[];
+
+    const transactions = [...pledgeRows, ...expenseRows, ...transferRows]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, limit);
 

@@ -11,7 +11,7 @@ import {
 type Transaction = {
   id: string;
   date: string;
-  type: "pledge" | "expense";
+  type: "pledge" | "expense" | "transfer";
   projectName: string;
   entity: string;
   amount: number;
@@ -55,10 +55,16 @@ export function TransactionLog({ transactions }: Props) {
                 className={
                   item.type === "pledge"
                     ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                    : item.type === "transfer"
+                    ? "bg-blue-100 text-blue-700 hover:bg-blue-100"
                     : "bg-rose-100 text-rose-700 hover:bg-rose-100"
                 }
               >
-                {item.type === "pledge" ? `Pledge (${item.status || "pending"})` : "Expense"}
+                {item.type === "pledge"
+                  ? `Pledge (${item.status || "pending"})`
+                  : item.type === "transfer"
+                  ? "Transfer to Donations"
+                  : "Expense"}
               </Badge>
             </TableCell>
             <TableCell className="font-medium">{item.projectName}</TableCell>

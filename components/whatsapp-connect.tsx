@@ -2,21 +2,29 @@
 
 import { MessageCircle } from "lucide-react"
 
-function getWhatsAppUrl(message: string) {
-  const number = process.env.NEXT_PUBLIC_TRUST_WHATSAPP_NUMBER || process.env.TRUST_WHATSAPP_NUMBER || "919876543210"
-  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`
+function getWhatsAppUrl(message: string, number?: string) {
+  const targetNumber =
+    number ||
+    process.env.NEXT_PUBLIC_TRUST_WHATSAPP_NUMBER ||
+    process.env.TRUST_WHATSAPP_NUMBER ||
+    "919353678546"
+  return `https://wa.me/${targetNumber}?text=${encodeURIComponent(message)}`
 }
 
 export function WhatsAppConnect({
   message = "Hi Suraksha Team, I would like to know more.",
   floating = false,
+  number,
+  label = "WhatsApp Us",
   className = "",
 }: {
   message?: string
   floating?: boolean
+  number?: string
+  label?: string
   className?: string
 }) {
-  const href = getWhatsAppUrl(message)
+  const href = getWhatsAppUrl(message, number)
 
   if (floating) {
     return (
@@ -40,7 +48,7 @@ export function WhatsAppConnect({
       className={`inline-flex items-center gap-2 rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-600 ${className}`}
     >
       <MessageCircle className="size-4" />
-      WhatsApp Us
+      {label}
     </a>
   )
 }

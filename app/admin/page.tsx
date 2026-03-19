@@ -39,9 +39,19 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
-import { TransactionLog } from "@/components/transactions/transaction-log"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
+
+function getAxisUpperBound(values: number[], fallback = 10) {
+  const maxValue = Math.max(...values, 0)
+  if (maxValue <= 0) return fallback
+
+  const padded = maxValue * 1.2
+  const order = Math.floor(Math.log10(padded))
+  const step = Math.max(5, Math.pow(10, Math.max(order - 1, 0)))
+
+  return Math.ceil(padded / step) * step
+}
 
 export default function AdminDashboard() {
   const [range, setRange] = useState<"1M" | "3M" | "6M" | "1Y" | "3Y" | "MAX">("1Y")
@@ -51,12 +61,6 @@ export default function AdminDashboard() {
   const { data, isLoading, error } = useSWR(query, fetcher, {
     refreshInterval: 5000,
   })
-
-  const { data: csrTransactionsData, isLoading: csrTransactionsLoading } = useSWR(
-    "/api/csr-transactions?limit=50",
-    fetcher,
-    { refreshInterval: 5000 }
-  )
 
   if (error) {
     return (
@@ -71,7 +75,14 @@ export default function AdminDashboard() {
   const donationTrend = data?.donationTrend || []
   const donorGrowth = data?.donorGrowth || []
   const recentDonations = data?.recentDonations || []
-  const csrTransactions = csrTransactionsData?.transactions || []
+  const donationAxisUpperBound = useMemo(
+    () => getAxisUpperBound(donationTrend.map((item: any) => Number(item.total || 0)), 100),
+    [donationTrend]
+  )
+  const donorAxisUpperBound = useMemo(
+    () => getAxisUpperBound(donorGrowth.map((item: any) => Number(item.count || 0)), 5),
+    [donorGrowth]
+  )
 
   const metricCards = [
     {
@@ -182,8 +193,13 @@ export default function AdminDashboard() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" fontSize={12} />
-                    <YAxis fontSize={12} width={55} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+                    <XAxis dataKey="month" fontSize={12} padding={{ left: 12, right: 12 }} />
+                    <YAxis
+                      fontSize={12}
+                      width={55}
+                      domain={[0, donationAxisUpperBound]}
+                      tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+                    />
                     <Tooltip formatter={(value: number) => [`₹${value.toLocaleString("en-IN")}`, "Donations"]} contentStyle={{ borderRadius: 8, fontSize: 12 }} />
                     <Area type="monotone" dataKey="total" stroke="#4A7AB5" fill="url(#colorAmount)" strokeWidth={2} />
                   </AreaChart>
@@ -208,8 +224,8 @@ export default function AdminDashboard() {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={donorGrowth} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" fontSize={12} />
-                    <YAxis fontSize={12} width={35} />
+                    <XAxis dataKey="month" fontSize={12} padding={{ left: 12, right: 12 }} />
+                    <YAxis fontSize={12} width={35} domain={[0, donorAxisUpperBound]} />
                     <Tooltip formatter={(value: number) => [value, "Donors"]} contentStyle={{ borderRadius: 8, fontSize: 12 }} />
                     <Line type="monotone" dataKey="count" stroke="#E8B931" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                   </LineChart>
@@ -274,21 +290,6 @@ export default function AdminDashboard() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>CSR Financial Activity</CardTitle>
-          <CardDescription>Incoming pledges and outgoing expenses in real time</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {csrTransactionsLoading ? (
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (<Skeleton key={i} className="h-12 w-full" />))}
-            </div>
-          ) : (
-            <TransactionLog transactions={csrTransactions} />
-          )}
-        </CardContent>
-      </Card>
     </div>
   )
 }

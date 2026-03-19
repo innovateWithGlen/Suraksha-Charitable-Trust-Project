@@ -36,31 +36,45 @@ async function sendWithRecipientFallback(
   return retried;
 }
 
+function looksLikeLocalhost(value: string): boolean {
+  return /localhost|127\.0\.0\.1/i.test(value);
+}
+
+function ensureProtocol(value: string): string {
+  if (/^https?:\/\//i.test(value)) return value;
+  return `https://${value}`;
+}
+
+function normalizeBaseUrl(value: string): string {
+  const withProtocol = ensureProtocol(value.trim());
+  return withProtocol.endsWith("/") ? withProtocol.slice(0, -1) : withProtocol;
+}
+
+function resolvePublicBaseUrl(): string {
+  const candidates = [
+    process.env.APP_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.NEXTAUTH_URL,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    process.env.VERCEL_URL,
+  ]
+    .filter((value): value is string => Boolean(value && value.trim()))
+    .map((value) => normalizeBaseUrl(value));
+
+  const nonLocal = candidates.find((value) => !looksLikeLocalhost(value));
+  if (nonLocal) return nonLocal;
+
+  if (candidates[0]) return candidates[0];
+
+  return "http://localhost:3000";
+}
+
 function toAbsoluteUrl(pathOrUrl: string): string {
   if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
 
-  const configuredBase = process.env.NEXT_PUBLIC_APP_URL;
-  const vercelProductionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
-  const vercelPreviewUrl = process.env.VERCEL_URL;
-
-  const looksLikeLocalhost = (value: string) => /localhost|127\.0\.0\.1/i.test(value);
-
-  let base = configuredBase || "";
-  if (process.env.NODE_ENV === "production" && (!base || looksLikeLocalhost(base))) {
-    if (vercelProductionUrl) {
-      base = `https://${vercelProductionUrl}`;
-    } else if (vercelPreviewUrl) {
-      base = `https://${vercelPreviewUrl}`;
-    }
-  }
-
-  if (!base) {
-    base = "http://localhost:3000";
-  }
-
-  const normalizedBase = base.endsWith("/") ? base.slice(0, -1) : base;
+  const base = resolvePublicBaseUrl();
   const normalizedPath = pathOrUrl.startsWith("/") ? pathOrUrl : `/${pathOrUrl}`;
-  return `${normalizedBase}${normalizedPath}`;
+  return `${base}${normalizedPath}`;
 }
 
 function getTestInbox(): string | undefined {

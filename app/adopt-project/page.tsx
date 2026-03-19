@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import useSWR from "swr";
 import { CSRProjectCard } from "@/components/csr/csr-project-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +30,8 @@ export default function AdoptProjectPage() {
 
   const projects = (data?.projects || []) as CSRProject[];
   const [selectedProjectId, setSelectedProjectId] = useState("");
+  const pledgeSelectRef = useRef<HTMLSelectElement | null>(null);
+  const pledgeSectionRef = useRef<HTMLElement | null>(null);
   const [form, setForm] = useState({
     companyName: "",
     amount: "",
@@ -40,6 +42,15 @@ export default function AdoptProjectPage() {
   });
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const handleAdoptClick = (projectId: string) => {
+    setSelectedProjectId(projectId);
+
+    requestAnimationFrame(() => {
+      pledgeSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      pledgeSelectRef.current?.focus();
+    });
+  };
 
   const submitPledge = async () => {
     if (!selectedProjectId) return;
@@ -96,12 +107,13 @@ export default function AdoptProjectPage() {
         ) : (
           <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {projects.map((project) => (
-              <CSRProjectCard key={project._id} project={project} onPledge={setSelectedProjectId} />
+              <CSRProjectCard key={project._id} project={project} onPledge={handleAdoptClick} />
             ))}
           </div>
         )}
 
-        <Card className="mt-12">
+        <section ref={pledgeSectionRef} id="corporate-pledge" className="mt-12">
+        <Card>
           <CardHeader>
             <CardTitle>Corporate Pledge</CardTitle>
           </CardHeader>
@@ -109,6 +121,7 @@ export default function AdoptProjectPage() {
             <div className="md:col-span-2">
               <Label>Select Project</Label>
               <select
+                ref={pledgeSelectRef}
                 className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                 value={selectedProjectId}
                 onChange={(e) => setSelectedProjectId(e.target.value)}
@@ -155,6 +168,7 @@ export default function AdoptProjectPage() {
             </div>
           </CardContent>
         </Card>
+        </section>
       </div>
     </section>
   );

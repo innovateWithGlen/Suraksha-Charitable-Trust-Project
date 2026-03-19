@@ -7,6 +7,17 @@ import { encrypt } from "@/lib/encryption";
 import { isValidIdProofNumber, isValidPanNumber, normalizeIdProofNumber, normalizePanNumber } from "@/lib/identity-format";
 import crypto from "crypto";
 
+function normalizeIndianPhone(value?: string) {
+  const source = String(value || "");
+  const digitsOnly = source.replace(/\D/g, "");
+  const withoutCountryCode = digitsOnly.startsWith("91")
+    ? digitsOnly.slice(2)
+    : digitsOnly;
+  const localTenDigits = withoutCountryCode.slice(0, 10);
+
+  return localTenDigits ? `+91${localTenDigits}` : "";
+}
+
 // GET /api/donations - List donations with filters
 export async function GET(request: Request) {
   try {
@@ -127,6 +138,7 @@ export async function POST(request: Request) {
     const validated = donationSchema.parse(body);
 
     const panNumber = normalizePanNumber(validated.panNumber) || "";
+    const donorPhone = normalizeIndianPhone(validated.donorPhone);
     const idProofType = validated.idProofType || undefined;
     const idProofNumber =
       idProofType === "aadhaar"
@@ -143,13 +155,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid alternate ID format" }, { status: 400 });
     }
 
+    if (donorPhone && !/^\+91\d{10}$/.test(donorPhone)) {
+      return NextResponse.json({ error: "Invalid phone number format" }, { status: 400 });
+    }
+
     // Upsert donor
     const donor = await Donor.findOneAndUpdate(
       { email: validated.donorEmail.toLowerCase() },
       {
         $set: {
           name: validated.donorName,
-          phone: validated.donorPhone,
+          phone: donorPhone,
           ...(panNumber && { panNumber: encrypt(panNumber) }),
           ...(idProofType && idProofNumber && {
             idProofType,
@@ -183,7 +199,7 @@ export async function POST(request: Request) {
       donorId: donor._id,
       donorName: validated.donorName,
       donorEmail: validated.donorEmail.toLowerCase(),
-      donorPhone: validated.donorPhone,
+      donorPhone: donorPhone,
       amount: validated.amount,
       method: validated.method,
       requires80G: validated.requires80G || false,

@@ -2,13 +2,14 @@
 
 import { useMemo, useState } from "react"
 import useSWR, { mutate } from "swr"
-import { Download, Search, Filter, Receipt, Send } from "lucide-react"
+import { Download, Search, Filter, Receipt, Send, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
@@ -65,10 +66,20 @@ export default function DonationsPage() {
     mutate("/api/certificates")
   }
 
-  const resendReceipt = async (donationId: string) => {
+  const getLatestCertificate = async (donationId: string) => {
     const certRes = await fetch(`/api/certificates?donationId=${donationId}`)
     const certPayload = await certRes.json().catch(() => ({}))
     const certificate = certPayload?.certificates?.[0]
+
+    if (!certificate) {
+      return null
+    }
+
+    return certificate
+  }
+
+  const resendReceipt = async (donationId: string) => {
+    const certificate = await getLatestCertificate(donationId)
     if (!certificate) {
       toast.error("No receipt found for this donation")
       return
@@ -116,6 +127,22 @@ export default function DonationsPage() {
     link.href = URL.createObjectURL(blob)
     link.download = `donations-${new Date().toISOString().slice(0, 10)}.csv`
     link.click()
+  }
+
+  const openReceipt = async (donationId: string, fallbackUrl?: string) => {
+    let resolvedUrl = fallbackUrl
+
+    if (!resolvedUrl) {
+      const certificate = await getLatestCertificate(donationId)
+      resolvedUrl = certificate?.pdfUrl
+    }
+
+    if (!resolvedUrl) {
+      toast.error("No receipt available for download")
+      return
+    }
+
+    window.open(resolvedUrl, "_blank", "noopener,noreferrer")
   }
 
   return (
@@ -225,32 +252,48 @@ export default function DonationsPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        {d.requires80G ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={!d.is80GIdentityReady}
-                            onClick={() => generateReceipt(d)}
-                            title={!d.is80GIdentityReady ? "Capture PAN or alternate ID first" : undefined}
-                          >
-                            <Receipt className="mr-1 size-3" />
-                            Generate 80G
-                          </Button>
-                        ) : null}
-                        {d.certificateUrl ? (
-                          <Button size="sm" variant="outline" asChild>
-                            <a href={d.certificateUrl} target="_blank" rel="noreferrer">
-                              <Download className="mr-1 size-3" /> Download
-                            </a>
-                          </Button>
-                        ) : null}
-                        {d.requires80G && d.certificateUrl ? (
-                          <Button size="sm" variant="outline" onClick={() => resendReceipt(d._id)}>
-                            <Send className="mr-1 size-3" /> Re-send
-                          </Button>
-                        ) : null}
-                      </div>
+                      {d.requires80G ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="outline" className="gap-1">
+                              Manage
+                              <ChevronDown className="size-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuItem
+                              disabled={!d.is80GIdentityReady}
+                              onSelect={(event) => {
+                                event.preventDefault()
+                                void generateReceipt(d)
+                              }}
+                            >
+                              <Receipt className="size-3.5" />
+                              Generate 80G
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onSelect={(event) => {
+                                event.preventDefault()
+                                void openReceipt(d._id, d.certificateUrl)
+                              }}
+                            >
+                              <Download className="size-3.5" />
+                              Download
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onSelect={(event) => {
+                                event.preventDefault()
+                                void resendReceipt(d._id)
+                              }}
+                            >
+                              <Send className="size-3.5" />
+                              Resend
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">N/A</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))

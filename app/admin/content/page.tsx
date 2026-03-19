@@ -41,6 +41,70 @@ type EditableProgram = {
   description: string
 }
 
+const defaultFaqs: Array<{ question: string; answer: string }> = [
+  {
+    question: "Is my donation tax-deductible?",
+    answer:
+      "Yes, all donations to Suraksha Charitable Trust are eligible for tax deduction under Section 80G of the Income Tax Act. You will receive a tax receipt via email after your donation is processed.",
+  },
+  {
+    question: "How are the funds used?",
+    answer:
+      "We maintain complete transparency in fund utilization. Over 85% of all donations go directly to our programs in education, healthcare, environment, and community welfare. The remaining covers essential administrative and operational costs. Detailed financial reports are published annually.",
+  },
+  {
+    question: "Can I volunteer with Suraksha Trust?",
+    answer:
+      "Absolutely! We welcome volunteers from all backgrounds. You can contribute your time and skills in various areas including teaching, healthcare support, event management, and community outreach. Fill out the contact form or email us to learn about current volunteering opportunities.",
+  },
+  {
+    question: "How can I track the impact of my donation?",
+    answer:
+      "We send regular impact reports to our donors detailing how their contributions have made a difference. You can also visit our programs in person by scheduling a visit through our office.",
+  },
+  {
+    question: "What payment methods do you accept?",
+    answer:
+      "We accept UPI, credit/debit cards, net banking, and bank transfers through our secure payment gateway powered by Razorpay. All transactions are encrypted and fully secure.",
+  },
+  {
+    question: "Can I donate in someone's name or in memory of someone?",
+    answer:
+      "Yes, you can make a donation in honor or memory of a loved one. Simply mention the details in the notes section during the donation process, and we will send an acknowledgement to the person or family.",
+  },
+  {
+    question: "Do you accept international donations?",
+    answer:
+      "Currently, we accept donations from within India. We are working on setting up FCRA registration to accept international contributions. Please contact us for more details.",
+  },
+  {
+    question: "How do I get a receipt for my donation?",
+    answer:
+      "A donation receipt is automatically sent to your registered email address within 24 hours of a successful transaction. If you do not receive it, please contact us at SurakshaCharitableTrust@gmail.com.",
+  },
+]
+
+const normalizeFaqKey = (text: string) =>
+  text.trim().toLowerCase().replace(/\s+/g, " ")
+
+const mergeFaqs = (incoming: EditableFaq[]): EditableFaq[] => {
+  const seen = new Set(incoming.map((faq) => normalizeFaqKey(faq.question)))
+  const merged = [...incoming]
+
+  for (const faq of defaultFaqs) {
+    const key = normalizeFaqKey(faq.question)
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    merged.push({
+      id: makeTempId(),
+      question: faq.question,
+      answer: faq.answer,
+    })
+  }
+
+  return merged
+}
+
 const makeTempId = () => `temp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 
 export default function ContentPage() {
@@ -93,7 +157,7 @@ export default function ContentPage() {
 
       const heroItem = (heroJson.content as ContentDoc[])[0]
 
-      setFaqs(faqItems)
+      setFaqs(mergeFaqs(faqItems))
       setPrograms(programItems)
       setHero({
         id: heroItem?._id || "",

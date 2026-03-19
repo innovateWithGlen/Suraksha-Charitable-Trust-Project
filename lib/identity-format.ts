@@ -60,7 +60,7 @@ export function normalizeIdProofNumber(type: IdProofType, value?: string): strin
   if (!trimmed) return undefined;
 
   if (type === "aadhaar") {
-    return trimmed.replace(/\s+/g, "");
+    return trimmed.replace(/\D/g, "");
   }
 
   return trimmed.toUpperCase();

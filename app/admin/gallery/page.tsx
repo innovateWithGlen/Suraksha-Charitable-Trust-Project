@@ -52,6 +52,8 @@ const categoryColors: Record<string, string> = {
   other: "bg-slate-100 text-slate-700",
 }
 
+type ImageInputMode = "url" | "upload"
+
 export default function AdminGalleryPage() {
   const { data, isLoading } = useSWR("/api/gallery?active=false", fetcher, { refreshInterval: 5000 })
   const events: ApiGalleryEvent[] = data?.events || []
@@ -67,6 +69,8 @@ export default function AdminGalleryPage() {
   const [formDescription, setFormDescription] = useState("")
   const [formImageUrl, setFormImageUrl] = useState("")
   const [formImages, setFormImages] = useState<string[]>([])
+  const [imageInputMode, setImageInputMode] = useState<ImageInputMode>("url")
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   const editingEvent = useMemo(
     () => events.find((event) => event._id === editingEventId) || null,
@@ -81,6 +85,8 @@ export default function AdminGalleryPage() {
     setFormDescription("")
     setFormImageUrl("")
     setFormImages([])
+    setImageInputMode("url")
+    setUploadingImage(false)
     setEditingEventId(null)
   }
 
@@ -111,6 +117,33 @@ export default function AdminGalleryPage() {
       setFormImageUrl("")
     } catch {
       toast.error("Enter a valid image URL")
+    }
+  }
+
+  const uploadImageFromFile = async (file: File | null) => {
+    if (!file) return
+
+    setUploadingImage(true)
+
+    try {
+      const payload = new FormData()
+      payload.append("image", file)
+
+      const response = await fetch("/api/uploads/images", {
+        method: "POST",
+        body: payload,
+      })
+
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok || !result?.url) {
+        toast.error(result.error || "Failed to upload image")
+        return
+      }
+
+      setFormImages((prev) => [...prev, result.url])
+      toast.success("Image uploaded")
+    } finally {
+      setUploadingImage(false)
     }
   }
 
@@ -238,17 +271,51 @@ export default function AdminGalleryPage() {
                 </div>
 
                 <div>
-                  <Label>Add Image URL</Label>
+                  <Label>Add Image</Label>
                   <div className="mt-1 flex gap-2">
-                    <Input
-                      value={formImageUrl}
-                      onChange={(e) => setFormImageUrl(e.target.value)}
-                      placeholder="https://..."
-                    />
-                    <Button type="button" variant="outline" onClick={addImageUrl}>
-                      Add
+                    <Button
+                      type="button"
+                      variant={imageInputMode === "url" ? "default" : "outline"}
+                      onClick={() => setImageInputMode("url")}
+                    >
+                      URL
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={imageInputMode === "upload" ? "default" : "outline"}
+                      onClick={() => setImageInputMode("upload")}
+                    >
+                      Upload
                     </Button>
                   </div>
+
+                  {imageInputMode === "url" ? (
+                    <div className="mt-2 flex gap-2">
+                      <Input
+                        value={formImageUrl}
+                        onChange={(e) => setFormImageUrl(e.target.value)}
+                        placeholder="https://..."
+                      />
+                      <Button type="button" variant="outline" onClick={addImageUrl}>
+                        Add
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="mt-2 flex flex-col gap-2">
+                      <Input
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null
+                          uploadImageFromFile(file)
+                          e.currentTarget.value = ""
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">Upload from local drive (JPG, PNG, WEBP • up to 5MB)</p>
+                    </div>
+                  )}
+
+                  {uploadingImage ? <p className="mt-2 text-xs text-muted-foreground">Uploading image...</p> : null}
 
                   {formImages.length > 0 ? (
                     <div className="mt-3 grid grid-cols-3 gap-3">

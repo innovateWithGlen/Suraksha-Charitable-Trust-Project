@@ -85,6 +85,26 @@ const fallbackFaqs = [
   },
 ]
 
+const normalizeFaqKey = (text: string) =>
+  text.trim().toLowerCase().replace(/\s+/g, " ")
+
+const mergeFaqs = (
+  defaults: Array<{ question: string; answer: string }>,
+  incoming: Array<{ question: string; answer: string }>
+) => {
+  const merged = [...defaults]
+  const seen = new Set(defaults.map((faq) => normalizeFaqKey(faq.question)))
+
+  for (const faq of incoming) {
+    const key = normalizeFaqKey(faq.question)
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    merged.push(faq)
+  }
+
+  return merged
+}
+
 export default function ContactPage() {
   const [formState, setFormState] = useState({
     name: "",
@@ -113,8 +133,8 @@ export default function ContactPage() {
           }))
           .filter((item: { question: string; answer: string }) => item.question && item.answer)
 
-        if (mounted && apiFaqs.length > 0) {
-          setFaqs(apiFaqs)
+        if (mounted) {
+          setFaqs(mergeFaqs(fallbackFaqs, apiFaqs))
         }
       } catch {
         return
@@ -243,7 +263,12 @@ export default function ContactPage() {
               </div>
 
               <div className="flex flex-col gap-4">
-                <WhatsAppConnect className="justify-center" message="Hi Suraksha Team, I have an inquiry from the website contact page." />
+                <WhatsAppConnect
+                  className="justify-center"
+                  number="919353678546"
+                  label="WhatsApp Us"
+                  message="Hi Glen Monteiro, I have an inquiry from the Suraksha website contact page."
+                />
                 {contactDetails.map((detail) => {
                   const Icon = detail.icon
                   const content = (

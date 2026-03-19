@@ -15,6 +15,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { TransactionLog } from "@/components/transactions/transaction-log";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -54,6 +63,7 @@ const sectionOptions = {
   project: "Add New CSR Project",
   expense: "Log Expense",
   pledges: "CSR Pledge Requests",
+  transactions: "CSR Financial Activity",
 } as const;
 
 type SectionKey = keyof typeof sectionOptions;
@@ -73,6 +83,11 @@ export default function AdminCSRPage() {
     fetcher,
     { refreshInterval: 8000 }
   );
+  const { data: csrTransactionsData, isLoading: csrTransactionsLoading } = useSWR(
+    "/api/csr-transactions?limit=50",
+    fetcher,
+    { refreshInterval: 8000 }
+  );
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState("");
   const [saving, setSaving] = useState(false);
@@ -81,6 +96,11 @@ export default function AdminCSRPage() {
   const [listFeedback, setListFeedback] = useState("");
   const [expenseSubmitting, setExpenseSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState("");
+  const [forceClosingId, setForceClosingId] = useState("");
+  const [forceCloseDialogOpen, setForceCloseDialogOpen] = useState(false);
+  const [forceCloseProject, setForceCloseProject] = useState<any | null>(null);
+  const [forceCloseNote, setForceCloseNote] = useState("");
+  const [forceCloseTransferAmount, setForceCloseTransferAmount] = useState("");
   const [activeSection, setActiveSection] = useState<SectionKey>("project");
   const [coverImageMode, setCoverImageMode] = useState<CoverImageInputMode>("url");
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
@@ -265,6 +285,80 @@ export default function AdminCSRPage() {
       mutate(),
       globalMutate("/api/csr-dashboard"),
       globalMutate("/api/csr-projects?status=Open&limit=100"),
+      globalMutate("/api/csr-transactions?limit=50"),
+    ]);
+  };
+
+  const openForceCloseDialog = (project: any) => {
+    setForceCloseProject(project);
+    setForceCloseTransferAmount(String(Number(project?.raisedAmount || 0)));
+    setForceCloseNote("");
+    setForceCloseDialogOpen(true);
+    setListFeedback("");
+  };
+
+  const forceCloseAndDeleteProject = async () => {
+    if (!forceCloseProject) return;
+
+    const transferAmount = Number(forceCloseTransferAmount || 0);
+    const raisedAmount = Number(forceCloseProject.raisedAmount || 0);
+
+    if (!forceCloseNote.trim() || forceCloseNote.trim().length < 8) {
+      setListFeedback("Please provide a short closure note (minimum 8 characters).");
+      return;
+    }
+
+    if (!Number.isFinite(transferAmount) || transferAmount <= 0) {
+      setListFeedback("Transfer amount must be greater than 0.");
+      return;
+    }
+
+    if (transferAmount > raisedAmount) {
+      setListFeedback("Transfer amount cannot exceed the raised amount.");
+      return;
+    }
+
+    setForceClosingId(forceCloseProject._id);
+
+    const response = await fetch(`/api/csr-projects/${forceCloseProject._id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        forceCloseAndTransfer: true,
+        closureNote: forceCloseNote.trim(),
+        transferAmount,
+      }),
+    });
+
+    const responseBody = await response.json().catch(() => ({}));
+    setForceClosingId("");
+
+    if (!response.ok) {
+      setListFeedback(getApiErrorMessage(responseBody, "Failed to close and transfer CSR project."));
+      return;
+    }
+
+    if (editingId === forceCloseProject._id) {
+      setEditingId("");
+      setForm(initialForm);
+    }
+
+    if (expenseForm.projectId === forceCloseProject._id) {
+      setExpenseForm((prev) => ({ ...prev, projectId: "" }));
+    }
+
+    setForceCloseDialogOpen(false);
+    setForceCloseProject(null);
+    setForceCloseNote("");
+    setForceCloseTransferAmount("");
+    setListFeedback("CSR project closed, amount transferred to Total Donations, and project deleted.");
+
+    await Promise.all([
+      mutate(),
+      globalMutate("/api/csr-dashboard"),
+      globalMutate("/api/csr-projects?status=Open&limit=100"),
+      globalMutate("/api/csr-transactions?limit=50"),
+      globalMutate("/api/dashboard?range=1Y"),
     ]);
   };
 
@@ -283,6 +377,7 @@ export default function AdminCSRPage() {
   };
 
   const pledges = pledgesData?.pledges || [];
+  const csrTransactions = csrTransactionsData?.transactions || [];
 
   const startEdit = (project: any) => {
     setActiveSection("project");
@@ -572,6 +667,22 @@ export default function AdminCSRPage() {
         </Card>
       ) : null}
 
+      {activeSection === "transactions" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>CSR Financial Activity</CardTitle>
+            <CardDescription>Incoming pledges, expenses, and internal transfers in real time.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {csrTransactionsLoading ? (
+              <p className="text-sm text-muted-foreground">Loading CSR transactions...</p>
+            ) : (
+              <TransactionLog transactions={csrTransactions} />
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle>Current CSR Projects</CardTitle>
@@ -590,21 +701,98 @@ export default function AdminCSRPage() {
                 <div className="flex items-center gap-2">
                   <Badge>{project.status}</Badge>
                   <Button size="sm" variant="outline" onClick={() => startEdit(project)}>Edit</Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => deleteProject(project)}
-                    disabled={deletingId === project._id}
-                  >
-                    <Trash2 className="mr-1 size-3.5" />
-                    {deletingId === project._id ? "Deleting..." : "Delete"}
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={deletingId === project._id || forceClosingId === project._id}
+                      >
+                        <Trash2 className="mr-1 size-3.5" />
+                        {deletingId === project._id
+                          ? "Deleting..."
+                          : forceClosingId === project._id
+                          ? "Processing..."
+                          : "Delete"}
+                        <ChevronDown className="ml-1 size-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-72">
+                      <DropdownMenuItem onClick={() => deleteProject(project)}>
+                        Delete only (no linked pledges/expenses)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openForceCloseDialog(project)}>
+                        Close project, transfer funds to Total Donations, then delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </div>
           ))}
         </CardContent>
       </Card>
+
+      <Dialog open={forceCloseDialogOpen} onOpenChange={setForceCloseDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Close Project and Transfer Funds</DialogTitle>
+            <DialogDescription>
+              Provide a short note and transfer amount. The amount will be moved internally to Total Donations and logged in transaction history.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4">
+            <div className="rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">
+              Project: <span className="font-medium text-foreground">{forceCloseProject?.title || "-"}</span>
+              <br />
+              Raised Amount: <span className="font-medium text-foreground">₹{Number(forceCloseProject?.raisedAmount || 0).toLocaleString("en-IN")}</span>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="force-close-transfer-amount">Amount to Transfer</Label>
+              <Input
+                id="force-close-transfer-amount"
+                type="number"
+                min={1}
+                max={Number(forceCloseProject?.raisedAmount || 0)}
+                value={forceCloseTransferAmount}
+                onChange={(e) => setForceCloseTransferAmount(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="force-close-note">Closure Note</Label>
+              <Textarea
+                id="force-close-note"
+                rows={3}
+                placeholder="Reason for closing this project and internal fund transfer"
+                value={forceCloseNote}
+                onChange={(e) => setForceCloseNote(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setForceCloseDialogOpen(false);
+                setForceCloseProject(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={forceCloseAndDeleteProject}
+              disabled={!forceCloseProject || forceClosingId === forceCloseProject?._id}
+            >
+              {forceClosingId === forceCloseProject?._id ? "Processing..." : "Close, Transfer, and Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
