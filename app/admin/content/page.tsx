@@ -20,6 +20,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 
+//Types for content management
 type ContentDoc = {
   _id: string
   title: string
