@@ -226,7 +226,12 @@ export default function DonationsPage() {
               ) : donations.length === 0 ? (
                 <TableRow><TableCell colSpan={9}>No donations found</TableCell></TableRow>
               ) : (
-                donations.map((d: any) => (
+                donations.map((d: any) => {
+                  const normalizedStatus = String(d.status || "").toLowerCase()
+                  const isFailedTransaction = normalizedStatus === "failed"
+                  const canManage80G = d.requires80G && !isFailedTransaction
+
+                  return (
                   <TableRow key={d._id}>
                     <TableCell className="font-mono text-xs">{d.transactionId}</TableCell>
                     <TableCell>
@@ -270,7 +275,7 @@ export default function DonationsPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {d.requires80G ? (
+                      {canManage80G ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button size="sm" variant="outline" className="gap-1">
@@ -314,7 +319,7 @@ export default function DonationsPage() {
                       )}
                     </TableCell>
                   </TableRow>
-                ))
+                )})
               )}
             </TableBody>
           </Table>
