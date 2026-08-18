@@ -307,4 +307,4 @@ Validate `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` and ensure request signatures
 
 ## Maintainers
 
-Suraksha Charitable Trust project team.
+Glen Saver Monteiro.
