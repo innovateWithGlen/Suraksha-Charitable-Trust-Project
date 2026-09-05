@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
+import { auth } from "@/lib/auth";
 import { Certificate } from "@/lib/models";
+import { verifyReceiptToken } from "@/lib/receipt-token";
 
 export async function GET(
   request: Request,
@@ -16,6 +18,19 @@ export async function GET(
 
     if (!certificate || !certificate.pdfBase64) {
       return NextResponse.json({ error: "Receipt file not found" }, { status: 404 });
+    }
+
+    // Signed-in admins can always download. Everyone else needs a signed,
+    // expiring token (issued when the receipt is generated/emailed).
+    const session = await auth();
+    if (!session) {
+      const token = new URL(request.url).searchParams.get("token");
+      if (!verifyReceiptToken(id, token)) {
+        return NextResponse.json(
+          { error: "This receipt link is invalid or has expired" },
+          { status: 403 }
+        );
+      }
     }
 
     const buffer = Buffer.from(certificate.pdfBase64, "base64");

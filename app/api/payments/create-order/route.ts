@@ -5,38 +5,80 @@ import { Donation } from "@/lib/models";
 
 const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
 const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
-const isDemoMode = !razorpayKeyId || !razorpayKeySecret;
+const isDemoMode =
+  !razorpayKeyId ||
+  !razorpayKeySecret ||
+  process.env.DEMO_PAYMENTS === "true";
 
-// POST /api/payments/create-order - Create Razorpay order
+// POST /api/payments/create-order - Create Razorpay order for an existing donation
 export async function POST(request: Request) {
   try {
     const { donationId, amount } = await request.json();
 
-    if (!amount || amount < 100) {
+    if (!donationId) {
       return NextResponse.json(
-        { error: "Minimum donation amount is ₹100" },
+        { error: "Donation ID is required" },
         { status: 400 }
       );
     }
 
     await dbConnect();
 
-    if (isDemoMode) {
-      const demoOrderId = `demo_order_${Date.now()}`;
+    // The donation record is the source of truth for the amount.
+    const donation = await Donation.findById(donationId);
+    if (!donation) {
+      return NextResponse.json(
+        { error: "Donation not found" },
+        { status: 404 }
+      );
+    }
 
-      if (donationId) {
-        await Donation.findByIdAndUpdate(donationId, {
-          razorpayOrderId: demoOrderId,
-        });
-      }
+    if (
+      donation.status === "completed" ||
+      donation.status === "success"
+    ) {
+      return NextResponse.json(
+        { error: "This donation has already been processed" },
+        { status: 400 }
+      );
+    }
+
+    const payAmount = donation.amount;
+    if (!Number.isFinite(payAmount) || payAmount < 100) {
+      return NextResponse.json(
+        { error: "Invalid donation amount" },
+        { status: 400 }
+      );
+    }
+
+    // Reject a client-supplied amount that disagrees with the stored donation.
+    if (amount !== undefined && amount !== null && Math.round(Number(amount)) !== payAmount) {
+      return NextResponse.json(
+        { error: "Amount does not match the donation record" },
+        { status: 400 }
+      );
+    }
+
+    if (isDemoMode) {
+      const demoOrderId = `demo_order_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+      await Donation.findByIdAndUpdate(donationId, {
+        razorpayOrderId: demoOrderId,
+      });
 
       return NextResponse.json({
         orderId: demoOrderId,
-        amount: amount * 100,
+        amount: payAmount * 100,
         currency: "INR",
         key: null,
         demoMode: true,
       });
+    }
+
+    if (!razorpayKeyId || !razorpayKeySecret) {
+      return NextResponse.json(
+        { error: "Payment gateway is not configured" },
+        { status: 503 }
+      );
     }
 
     const razorpay = new Razorpay({
@@ -44,22 +86,19 @@ export async function POST(request: Request) {
       key_secret: razorpayKeySecret,
     });
 
-    // Create Razorpay order (amount in paise)
+    // Create Razorpay order (amount in paise) against the stored donation.
     const order = await razorpay.orders.create({
-      amount: amount * 100,
+      amount: payAmount * 100,
       currency: "INR",
-      receipt: donationId || `receipt_${Date.now()}`,
+      receipt: String(donation._id),
       notes: {
-        donationId: donationId || "",
+        donationId: String(donation._id),
       },
     });
 
-    // Update donation with razorpay order ID
-    if (donationId) {
-      await Donation.findByIdAndUpdate(donationId, {
-        razorpayOrderId: order.id,
-      });
-    }
+    await Donation.findByIdAndUpdate(donationId, {
+      razorpayOrderId: order.id,
+    });
 
     return NextResponse.json({
       orderId: order.id,

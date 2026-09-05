@@ -19,19 +19,19 @@ const fallbackContactDetails = [
   {
     icon: Phone,
     title: "Phone",
-    value: "+91 99999-00000",
-    href: "tel:+919999900000",
+    value: "+91 7892351129",
+    href: "tel:+917892351129",
   },
   {
     icon: Mail,
     title: "Email",
-    value: "SurakshaCharitableTrust@gmail.com",
-    href: "mailto:SurakshaCharitableTrust@gmail.com",
+    value: "savermonteiro@gmail.com",
+    href: "mailto:savermonteiro@gmail.com",
   },
   {
     icon: MapPin,
     title: "Address",
-    value: "Suraksha Charitable Trust, India",
+    value: "Suraksha Charitable Trust, 1st Cross Marikamba Nagar, Sirsi, Karnataka, India",
     href: null,
   },
   {
@@ -151,9 +151,9 @@ export default function ContactPage() {
         const data = await response.json()
         const settings = data.settings || {}
 
-        const phone = settings.orgPhone || "+91 99999-00000"
-        const email = settings.orgEmail || "SurakshaCharitableTrust@gmail.com"
-        const address = settings.orgAddress || "Suraksha Charitable Trust, India"
+        const phone = settings.orgPhone || "+91 7892351129"
+        const email = settings.orgEmail || "savermonteiro@gmail.com"
+        const address = settings.orgAddress || "Suraksha Charitable Trust, 1st Cross Marikamba Nagar, Sirsi, Karnataka, India"
         const workingHours = settings.workingHours || "Mon - Sat: 9:00 AM - 6:00 PM"
         const sanitizedPhone = String(phone).replace(/[^\d+]/g, "")
 
@@ -265,9 +265,9 @@ export default function ContactPage() {
               <div className="flex flex-col gap-4">
                 <WhatsAppConnect
                   className="justify-center"
-                  number="919353678546"
+                  number="917892351129"
                   label="WhatsApp Us"
-                  message="Hi Glen Monteiro, I have an inquiry from the Suraksha website contact page."
+                  message="Hi Saver Monteiro, I have an inquiry from the Suraksha website contact page."
                 />
                 {contactDetails.map((detail) => {
                   const Icon = detail.icon

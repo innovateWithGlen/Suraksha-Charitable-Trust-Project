@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import { auth } from "@/lib/auth";
 import { CSRPledge, CSRProject } from "@/lib/models";
-import {
-  recomputeProjectRaisedAmount,
-  upsertCorporateSponsorContribution,
-} from "@/lib/csr-helpers";
+import { recomputeProjectRaisedAmount } from "@/lib/csr-helpers";
 import { csrPledgeSchema, paginationSchema } from "@/lib/validations";
 import { sendCSRPledgeAdminNotification } from "@/lib/email";
 
@@ -87,21 +84,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid pledge amount" }, { status: 400 });
     }
 
+    // Public submissions are always "pledged". Confirmation (which bumps
+    // sponsor totals / project raisedAmount) only happens via the admin PUT.
     const pledge = await CSRPledge.create({
       ...validated,
       contactEmail: validated.contactEmail || undefined,
       contactPhone: validated.contactPhone || undefined,
-      status: validated.status || "pledged",
-      confirmationDate: validated.status === "confirmed" ? new Date() : undefined,
+      status: "pledged",
+      confirmationDate: undefined,
     });
-
-    if (pledge.status === "confirmed") {
-      await upsertCorporateSponsorContribution({
-        companyName: validated.companyName,
-        fiscalYear: validated.fiscalYear || "2025-26",
-        amount: pledge.amount,
-      });
-    }
 
     await recomputeProjectRaisedAmount(String(pledge.projectId));
 

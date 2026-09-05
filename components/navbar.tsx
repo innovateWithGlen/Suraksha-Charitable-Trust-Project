@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Menu, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { AnimatedLogo } from "@/components/animated-logo"
 import {
   Sheet,
   SheetContent,
@@ -34,19 +35,13 @@ export function Navbar() {
   }, [])
 
   return (
-    <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border">
+    <header className="sticky top-0 z-50 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
       {/* Main navbar */}
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3">
-          <Image
-            src="/images/logo.png"
-            alt="Suraksha Charitable Trust logo"
-            width={48}
-            height={48}
-            className="size-10 md:size-12"
-          />
-          <div className="flex flex-col">
+          <AnimatedLogo className="size-10 md:size-12" />
+          <div className="flex flex-col animate-[logo-text-in_0.6s_cubic-bezier(0.4,0,0.2,1)_0.9s_both]">
             <span className="text-base md:text-lg font-bold leading-tight text-foreground">
               Suraksha
             </span>
@@ -99,7 +94,7 @@ export function Navbar() {
               <SheetHeader>
                 <SheetTitle className="flex items-center gap-2">
                   <Image
-                    src="/images/logo.png"
+                    src="/images/logo.svg"
                     alt="Suraksha Charitable Trust logo"
                     width={32}
                     height={32}

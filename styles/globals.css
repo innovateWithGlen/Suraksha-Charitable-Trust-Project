@@ -123,3 +123,80 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes hero-breathe {
+  0%,
+  100% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.08) translateY(-12px);
+  }
+}
+
+@keyframes hero-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.logo-trunk {
+  fill: #0C1F40;
+  fill-opacity: 0;
+  stroke: #0C1F40;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-opacity: 1;
+  stroke-dasharray: var(--len, 1200);
+  stroke-dashoffset: var(--len, 1200);
+  transition:
+    stroke-dashoffset 1.3s cubic-bezier(0.4, 0, 0.2, 1),
+    fill-opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.85s,
+    stroke-opacity 0.4s ease 1.2s;
+}
+
+.logo-trunk.is-drawn {
+  stroke-dashoffset: 0;
+  fill-opacity: 1;
+  stroke-opacity: 0;
+}
+
+.logo-leaf {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.logo-leaf.is-in {
+  animation: logo-leaf-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: var(--d, 0.8s);
+}
+
+@keyframes logo-leaf-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes logo-text-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

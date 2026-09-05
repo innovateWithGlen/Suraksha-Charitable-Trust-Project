@@ -24,17 +24,15 @@ const values = [
 ]
 
 const stats = [
-  { value: "10+", label: "Years of Service" },
-  { value: "5,000+", label: "Lives Impacted" },
-  { value: "200+", label: "Volunteers" },
-  { value: "50+", label: "Projects Completed" },
+  { value: "4+", label: "Years of Service" },
+  { value: "5,00+", label: "Lives Impacted" },
+  // { value: "200+", label: "Volunteers" },
+  { value: "7+", label: "Projects Completed" },
 ]
 
 const team = [
-  { name: "Amit Kumar", role: "Founder & Chairman" },
-  { name: "Sunita Verma", role: "Director of Programs" },
-  { name: "Rajesh Singh", role: "Head of Operations" },
-  { name: "Priya Nair", role: "Community Outreach Lead" },
+  { name: "Saver Monteiro", role: "Founder & Managing Trustee" },
+  { name: "Lavina Monteiro", role: "President" },
 ]
 
 export default function AboutPage() {

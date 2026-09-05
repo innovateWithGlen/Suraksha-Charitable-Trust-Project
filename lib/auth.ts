@@ -18,6 +18,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   session: {
     strategy: "jwt",
   },
+  cookies: {
+    callbackUrl: {
+      options: {
+        // Auth.js writes this cookie percent-encoded (cookie.serialize default) but
+        // validates it during callback URL checks without decoding, which aborts the
+        // credentials login with "Invalid callback URL" -> HTTP 500. Store it raw.
+        encode: (value) => value,
+      },
+    },
+  },
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,

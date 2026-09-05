@@ -3,10 +3,10 @@ import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const stats = [
-  { value: "10+", label: "Years of Service" },
-  { value: "5,000+", label: "Lives Impacted" },
-  { value: "200+", label: "Volunteers" },
-  { value: "50+", label: "Projects Completed" },
+  { value: "4+", label: "Years of Service" },
+  { value: "5,00+", label: "Lives Impacted" },
+  // { value: "200+", label: "Volunteers" },
+  { value: "7+", label: "Projects Completed" },
 ]
 
 export function AboutPreviewSection() {

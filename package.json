@@ -19,10 +19,7 @@
     "@ai-sdk/google": "^3.0.43",
     "@ai-sdk/openai": "^3.0.39",
     "@ai-sdk/react": "^3.0.0",
-    "@auth/mongodb-adapter": "^3.11.1",
     "@hookform/resolvers": "^3.9.1",
-    "@langchain/community": "^1.1.22",
-    "@langchain/openai": "^1.2.12",
     "@next/env": "^16.1.6",
     "@radix-ui/react-accordion": "1.2.12",
     "@radix-ui/react-alert-dialog": "1.1.15",
@@ -53,7 +50,7 @@
     "@radix-ui/react-tooltip": "1.2.8",
     "@react-pdf/renderer": "^4.3.2",
     "@vercel/analytics": "1.6.1",
-    "@vercel/blob": "^2.3.0",
+    "@vercel/blob": "^2.8.0",
     "ai": "^6.0.0",
     "autoprefixer": "^10.4.20",
     "bcryptjs": "^3.0.3",
@@ -63,11 +60,10 @@
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.6.0",
     "input-otp": "1.4.2",
-    "langchain": "^1.2.29",
     "lucide-react": "^0.564.0",
-    "mongoose": "^9.2.4",
-    "next": "16.1.6",
-    "next-auth": "^5.0.0-beta.30",
+    "mongoose": "^9.9.5",
+    "next": "16.3.4",
+    "next-auth": "5.0.0-beta.32",
     "next-themes": "^0.4.6",
     "pdf-parse": "^2.4.5",
     "razorpay": "^2.9.6",
@@ -108,6 +104,17 @@
     "onlyBuiltDependencies": [
       "esbuild",
       "sharp"
-    ]
+    ],
+    "overrides": {
+      "axios": "^1.15.1",
+      "undici": "^8.1.0",
+      "lodash": "^4.18.1",
+      "follow-redirects": "^1.16.0",
+      "form-data": "^4.0.6",
+      "uuid": "^11.1.0",
+      "nanoid": "^5.1.6",
+      "postcss": "^8.5.23",
+      "browserslist": "^4.28.7"
+    }
   }
 }

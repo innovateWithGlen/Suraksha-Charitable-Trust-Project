@@ -71,9 +71,14 @@ export async function GET(request: Request) {
   }
 }
 
-// POST /api/donors - Create a donor
+// POST /api/donors - Create a donor (admin only; PII is encrypted at rest)
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     await dbConnect();
 
     const body = await request.json();

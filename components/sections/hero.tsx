@@ -19,32 +19,32 @@ export async function HeroSection() {
     "We are a children-focused charity organization dedicated to improving young lives through education, healthcare, protection, and community support."
 
   return (
-    <section className="relative flex min-h-[85vh] items-center overflow-hidden">
-      {/* Background image */}
-      <div className="absolute inset-0">
-        <img
-          src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920&q=80"
-          alt=""
-          className="size-full object-cover"
-          crossOrigin="anonymous"
-        />
-        <div className="absolute inset-0 bg-primary/75" />
+    <section className="relative flex min-h-[85vh] items-center overflow-hidden bg-white">
+      {/* Background logo watermark */}
+      <div className="absolute inset-0" aria-hidden="true">
+        <div className="absolute inset-0 flex items-center justify-end pr-8">
+          <img
+            src="/images/logo.png"
+            alt=""
+            className="h-[min(85vh,720px)] w-auto animate-[hero-breathe_12s_ease-in-out_infinite] object-contain"
+          />
+        </div>
       </div>
 
       {/* Content */}
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-20 md:py-28">
-        <div className="max-w-2xl">
-          <h1 className="text-balance text-4xl font-bold leading-tight tracking-tight text-primary-foreground sm:text-5xl lg:text-6xl">
+        <div className="max-w-2xl animate-[hero-fade-up_0.9s_ease-out_both]">
+          <h1 className="text-balance text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
             {heading}
           </h1>
-          <p className="mt-6 max-w-lg text-base leading-relaxed text-primary-foreground/80 sm:text-lg">
+          <p className="mt-6 max-w-lg text-base leading-relaxed text-slate-600 sm:text-lg">
             {subtext}
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Button
               asChild
               size="lg"
-              className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
+              className="bg-[#1f78e5] font-semibold text-white shadow-lg shadow-[#1f78e5]/30 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#1665c4] hover:shadow-xl hover:shadow-[#1f78e5]/40"
             >
               <Link href="/donate" className="flex items-center gap-2">
                 Donate Now
@@ -55,7 +55,7 @@ export async function HeroSection() {
               asChild
               variant="outline"
               size="lg"
-              className="border-2 border-white bg-white/10 text-white hover:bg-white hover:text-primary font-semibold"
+              className="border-2 border-slate-900 font-semibold text-slate-900 transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-900 hover:bg-slate-900 hover:text-white"
             >
               <Link href="/about">Learn More</Link>
             </Button>

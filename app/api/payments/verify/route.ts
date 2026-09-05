@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import Razorpay from "razorpay";
 import dbConnect from "@/lib/mongodb";
 import { Donation, Donor } from "@/lib/models";
 import { sendDonationConfirmation } from "@/lib/email";
 import { generateReceiptForDonation } from "@/lib/services/certificate-service";
 
-// POST /api/payments/verify - Verify Razorpay payment
+// POST /api/payments/verify - Verify Razorpay payment and complete donation
 export async function POST(request: Request) {
   try {
     const {
@@ -15,62 +16,115 @@ export async function POST(request: Request) {
       donationId,
     } = await request.json();
 
-    if (!donationId) {
-      return NextResponse.json({ error: "Donation ID is required" }, { status: 400 });
+    if (!donationId || !razorpay_order_id) {
+      return NextResponse.json(
+        { error: "Donation ID and order ID are required" },
+        { status: 400 }
+      );
     }
 
-    const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
-    const isDemoMode = !razorpaySecret;
+    const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
+    const demoMode =
+      !razorpayKeySecret && process.env.DEMO_PAYMENTS === "true";
 
-    if (razorpaySecret) {
+    // Fail closed: without a configured secret, only explicit demo mode works.
+    if (!razorpayKeySecret && !demoMode) {
+      return NextResponse.json(
+        { error: "Payment gateway is not configured" },
+        { status: 503 }
+      );
+    }
+
+    await dbConnect();
+
+    const donation = await Donation.findById(donationId);
+    if (!donation) {
+      return NextResponse.json({ error: "Donation not found" }, { status: 404 });
+    }
+
+    // Binding: the Razorpay order must have been created for this donation.
+    if (!donation.razorpayOrderId || donation.razorpayOrderId !== razorpay_order_id) {
+      return NextResponse.json(
+        { error: "Payment order does not match this donation" },
+        { status: 400 }
+      );
+    }
+
+    // Already fully processed -> idempotent success, no side effects repeated.
+    if (
+      donation.status === "completed" ||
+      donation.status === "success"
+    ) {
+      return NextResponse.json({
+        success: true,
+        alreadyProcessed: true,
+        donation,
+        receipt: donation.certificateUrl
+          ? { id: String(donation._id), url: donation.certificateUrl }
+          : null,
+      });
+    }
+
+    if (!demoMode && razorpayKeySecret) {
+      // Signature must be present and valid.
+      if (!razorpay_payment_id || !razorpay_signature) {
+        return NextResponse.json(
+          { error: "Payment ID and signature are required" },
+          { status: 400 }
+        );
+      }
+
       const body = `${razorpay_order_id}|${razorpay_payment_id}`;
       const expectedSignature = crypto
-        .createHmac("sha256", razorpaySecret)
+        .createHmac("sha256", razorpayKeySecret)
         .update(body)
         .digest("hex");
 
-      const isValid = expectedSignature === razorpay_signature;
-
-      if (!isValid) {
+      if (expectedSignature !== razorpay_signature) {
         return NextResponse.json(
           { error: "Invalid payment signature" },
           { status: 400 }
         );
       }
-    }
 
-    await dbConnect();
-
-    const resolvedTxnId = razorpay_payment_id || `demo_pay_${Date.now()}`;
-
-    if (isDemoMode) {
-      const settledCount = await Donation.countDocuments({
-        status: { $in: ["completed", "success", "failed"] },
+      // Server-side truth for the order: amount must match the donation
+      // and Razorpay must have settled the order as paid.
+      const razorpay = new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID as string,
+        key_secret: razorpayKeySecret,
       });
-      const shouldFailThisAttempt = (settledCount + 1) % 5 === 0;
 
-      if (shouldFailThisAttempt) {
-        await Donation.findByIdAndUpdate(donationId, {
-          $set: {
-            status: "failed",
-            transactionId: resolvedTxnId,
-            razorpayPaymentId: razorpay_payment_id || undefined,
-            razorpaySignature: razorpay_signature || undefined,
-            method: "other",
-            notes: "Demo rule: every 5th transaction fails",
-          },
-        });
-
+      try {
+        const paidOrder = await razorpay.orders.fetch(razorpay_order_id);
+        if (paidOrder?.amount !== donation.amount * 100) {
+          return NextResponse.json(
+            { error: "Payment amount does not match the donation" },
+            { status: 400 }
+          );
+        }
+        if (paidOrder?.status !== "paid") {
+          return NextResponse.json(
+            { error: "Payment has not been completed" },
+            { status: 400 }
+          );
+        }
+      } catch (orderError) {
+        console.error("Failed to fetch Razorpay order:", orderError);
         return NextResponse.json(
-          { error: "Demo failure: every 5th transaction is marked as failed" },
-          { status: 402 }
+          { error: "Could not confirm payment status" },
+          { status: 400 }
         );
       }
     }
 
-    // Update donation status
-    const donation = await Donation.findByIdAndUpdate(
-      donationId,
+    const resolvedTxnId =
+      razorpay_payment_id ||
+      `demo_pay_${crypto.randomUUID().slice(0, 8)}`;
+
+    // Atomic claim: only transition from pending/failed, so a payment is
+    // processed exactly once (no double email / stats / 80G aggregation).
+    const claimed = await Donation.findOneAndUpdate(
+      { _id: donation._id, status: { $in: ["pending", "failed"] } },
       {
         $set: {
           status: "completed",
@@ -83,16 +137,18 @@ export async function POST(request: Request) {
       { new: true }
     );
 
-    if (!donation) {
-      return NextResponse.json(
-        { error: "Donation not found" },
-        { status: 404 }
-      );
+    if (!claimed) {
+      const current = await Donation.findById(donationId);
+      return NextResponse.json({
+        success: true,
+        alreadyProcessed: true,
+        donation: current,
+      });
     }
 
     // Update donor stats
-    await Donor.findByIdAndUpdate(donation.donorId, {
-      $inc: { totalDonated: donation.amount, donationCount: 1 },
+    await Donor.findByIdAndUpdate(claimed.donorId, {
+      $inc: { totalDonated: claimed.amount, donationCount: 1 },
       $set: { lastDonationDate: new Date(), status: "active" },
     });
 
@@ -103,9 +159,9 @@ export async function POST(request: Request) {
       sent: boolean;
     } | null = null;
 
-    if (donation.requires80G) {
+    if (claimed.requires80G) {
       try {
-        const generated = await generateReceiptForDonation(String(donation._id), {
+        const generated = await generateReceiptForDonation(String(claimed._id), {
           resendEmail: true,
           forceRegenerate: false,
         });
@@ -122,13 +178,13 @@ export async function POST(request: Request) {
 
     // Send confirmation email (non-blocking)
     sendDonationConfirmation(
-      { name: donation.donorName, email: donation.donorEmail },
+      { name: claimed.donorName, email: claimed.donorEmail },
       {
-        transactionId: donation.transactionId,
-        amount: donation.amount,
-        method: donation.method,
-        createdAt: donation.createdAt,
-        requires80G: donation.requires80G,
+        transactionId: claimed.transactionId,
+        amount: claimed.amount,
+        method: claimed.method,
+        createdAt: claimed.createdAt,
+        requires80G: claimed.requires80G,
       }
     ).catch((err) =>
       console.error("Failed to send donation confirmation email:", err)
@@ -136,7 +192,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      donation,
+      donation: claimed,
       receipt,
     });
   } catch (error) {

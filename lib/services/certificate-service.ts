@@ -4,6 +4,7 @@ import { generateCertificateNumber } from "@/lib/certificate-generator";
 import { send80GReceiptEmail } from "@/lib/email";
 import { generate80GReceiptPDFBuffer } from "@/lib/services/certificate-pdf";
 import { decrypt } from "@/lib/encryption";
+import { signReceiptToken } from "@/lib/receipt-token";
 import { isValidIdProofNumber, isValidPanNumber, normalizeIdProofNumber, normalizePanNumber } from "@/lib/identity-format";
 
 const TRUST_NAME = "Suraksha Charitable Trust";
@@ -108,7 +109,7 @@ export async function generateReceiptForDonation(
     throw new Error("Failed to create certificate record");
   }
 
-  const receiptUrl = `/api/certificates/${String(certificate._id)}/download`;
+  const receiptUrl = `/api/certificates/${String(certificate._id)}/download?token=${signReceiptToken(String(certificate._id))}`;
 
   await Certificate.updateOne(
     { _id: certificate._id },
@@ -193,7 +194,7 @@ export async function resendReceiptEmail(certificateId: string) {
   const donation = await Donation.findById(certificate.donationId).lean();
   if (!donation) throw new Error("Donation not found");
 
-  const canonicalReceiptUrl = `/api/certificates/${String(certificate._id)}/download`;
+  const canonicalReceiptUrl = `/api/certificates/${String(certificate._id)}/download?token=${signReceiptToken(String(certificate._id))}`;
 
   await send80GReceiptEmail({
     donor: { name: donation.donorName, email: donation.donorEmail },

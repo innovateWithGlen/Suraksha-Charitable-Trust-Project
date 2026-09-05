@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AnimatedLogo } from "@/components/animated-logo";
 import {
   InputOTP,
   InputOTPGroup,
@@ -134,10 +135,9 @@ function AdminLoginContent() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center mb-4">
-            <img
-              src="/images/logo.png"
-              alt="Suraksha Charitable Trust"
-              className="h-16 w-16 object-contain"
+            <AnimatedLogo
+              className="h-16 w-16"
+              title="Suraksha Charitable Trust"
             />
           </div>
           <h1 className="text-2xl font-bold text-foreground">

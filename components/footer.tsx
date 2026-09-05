@@ -87,18 +87,19 @@ export function Footer() {
             </h3>
             <div className="flex flex-col gap-3 text-sm text-primary-foreground/60">
               <a
-                href="tel:+919999900000"
+                href="tel:+917892351129"
                 className="flex items-start gap-2 transition-colors hover:text-accent"
               >
                 <Phone className="mt-0.5 size-4 shrink-0" />
-                +91 99999-00000
+                +91 7892351129
               </a>
               <a
-                href="mailto:SurakshaCharitableTrust@gmail.com"
+                // href="mailto:savermonteiro@gmail.com"
+                href="mailto:savermonteiro@gmail.com?subject=Inquiry%20from%20Website"
                 className="flex items-start gap-2 transition-colors hover:text-accent"
               >
                 <Mail className="mt-0.5 size-4 shrink-0" />
-                SurakshaCharitableTrust@gmail.com
+                savermonteiro@gmail.com
               </a>
               <div className="flex items-start gap-2">
                 <MapPin className="mt-0.5 size-4 shrink-0" />
@@ -111,8 +112,10 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="mt-12 border-t border-primary-foreground/10 pt-6 text-center text-xs text-primary-foreground/50">
           <p>
-            &copy; {new Date().getFullYear()} Suraksha Charitable Trust. All
-            rights reserved.
+            &copy; {new Date().getFullYear()} Suraksha Charitable Trust. All rights reserved. 
+            <a href="https://www.linkedin.com/in/glen-monteiro/" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/50 hover:text-accent">
+              Designed by Glen Monteiro
+            </a>
           </p>
         </div>
       </div>
