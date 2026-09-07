@@ -113,7 +113,7 @@ export default function AdminLayout({
         {/* Sidebar header */}
         <div className="flex items-center gap-3 border-b border-sidebar-border px-4 py-4">
           <Image
-            src="/images/logo.png"
+            src="/images/logo.svg"
             alt="Suraksha Trust"
             width={32}
             height={32}
@@ -171,7 +171,7 @@ export default function AdminLayout({
                   <SheetHeader className="border-b border-sidebar-border px-4 py-4">
                     <SheetTitle className="flex items-center gap-2 text-sm">
                       <Image
-                        src="/images/logo.png"
+                        src="/images/logo.svg"
                         alt="Suraksha Trust"
                         width={24}
                         height={24}

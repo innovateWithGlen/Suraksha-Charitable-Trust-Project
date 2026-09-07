@@ -20,21 +20,20 @@ export const TRUST_FACTS = {
   },
   donationProofRequirement:
     "Donors must email their payment screenshot and PAN card copy to support@surakshatrustsirsi.org to receive the 80G tax exemption receipt (Form 10BE).",
-  settlor: "Mr. Rajesh Hegde",
+  settlor: "Saver Monteiro",
   trustees: [
-    "Mr. Rajesh Hegde (Managing Trustee)",
-    "Mrs. Lakshmi Bhat",
-    "Dr. Kiran Nayak"
+    "Saver Monteiro (Managing Trustee)",
+    "Lavina Monteiro (President)"
   ],
   contactPersons: [
     {
-      name: "Mr. Rajesh Hegde",
-      role: "Managing Trustee & Settlor",
+      name: "Saver Monteiro",
+      role: "Managing Trustee",
       scope: "Legal, administrative, and CSR partnership inquiries",
     },
     {
-      name: "Mrs. Lakshmi Bhat",
-      role: "Trustee",
+      name: "Lavina Monteiro",
+      role: "President",
       scope: "Local volunteer coordination and event management",
     },
   ],

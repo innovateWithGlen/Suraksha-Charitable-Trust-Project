@@ -31,7 +31,7 @@ const stats = [
 ]
 
 const team = [
-  { name: "Saver Monteiro", role: "Founder & Managing Trustee" },
+  { name: "Saver Monteiro", role: "Managing Trustee" },
   { name: "Lavina Monteiro", role: "President" },
 ]
 
@@ -42,6 +42,8 @@ export default function AboutPage() {
       <section className="relative flex items-center overflow-hidden bg-primary py-20 lg:py-28">
         <div className="absolute inset-0">
           <img
+            srcSet="https://images.unsplash.com/photo-1524069290683-0457abdc3563?w=640&q=75 640w, https://images.unsplash.com/photo-1524069290683-0457abdc3563?w=1200&q=75 1200w, https://images.unsplash.com/photo-1524069290683-0457abdc3563?w=1920&q=75 1920w"
+            sizes="100vw"
             src="https://images.unsplash.com/photo-1524069290683-0457abdc3563?w=1920&q=80"
             alt=""
             className="size-full object-cover opacity-20"
@@ -96,6 +98,8 @@ export default function AboutPage() {
                 alt="Community volunteers working together"
                 className="size-full rounded-lg object-cover"
                 crossOrigin="anonymous"
+                loading="lazy"
+                decoding="async"
               />
             </div>
             <div className="flex flex-col gap-6">
@@ -134,11 +138,11 @@ export default function AboutPage() {
       {/* Stats */}
       <section className="bg-secondary py-16">
         <div className="mx-auto max-w-7xl px-6">
-          <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
+          <div className="flex flex-wrap justify-center gap-x-12 gap-y-8">
             {stats.map((stat) => (
               <div
                 key={stat.label}
-                className="flex flex-col items-center gap-1 text-center"
+                className="flex w-full flex-col items-center gap-1 text-center sm:w-auto sm:min-w-44"
               >
                 <span className="text-3xl font-bold text-secondary-foreground sm:text-4xl">
                   {stat.value}
@@ -168,11 +172,11 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 flex flex-wrap justify-center gap-8">
             {team.map((member) => (
               <div
                 key={member.name}
-                className="flex flex-col items-center gap-3 text-center"
+                className="flex w-full flex-col items-center gap-3 text-center sm:w-auto sm:min-w-52"
               >
                 <div className="flex size-24 items-center justify-center rounded-full bg-muted">
                   <Users className="size-10 text-muted-foreground" />

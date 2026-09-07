@@ -95,7 +95,7 @@ export function Chatbot() {
             <div className="flex items-center gap-2">
               <div className="flex size-8 items-center justify-center rounded-full bg-primary-foreground/20">
                 <Image
-                  src="/images/logo.png"
+                  src="/images/logo.svg"
                   alt="Suraksha Charitable Trust logo"
                   width={24}
                   height={24}
@@ -121,7 +121,7 @@ export function Chatbot() {
               <div className="flex h-full flex-col items-center justify-center text-center">
                 <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-secondary/20">
                   <Image
-                    src="/images/logo.png"
+                    src="/images/logo.svg"
                     alt="Suraksha Charitable Trust logo"
                     width={36}
                     height={36}
@@ -164,7 +164,7 @@ export function Chatbot() {
                         <User className="size-3" />
                       ) : (
                         <Image
-                          src="/images/logo.png"
+                          src="/images/logo.svg"
                           alt="Suraksha Charitable Trust logo"
                           width={16}
                           height={16}
@@ -189,7 +189,7 @@ export function Chatbot() {
                 <div className="flex gap-2">
                   <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary/20 text-secondary mt-0.5">
                     <Image
-                      src="/images/logo.png"
+                      src="/images/logo.svg"
                       alt="Suraksha Charitable Trust logo"
                       width={16}
                       height={16}
@@ -257,7 +257,7 @@ export function Chatbot() {
             </svg>
             <span className="flex size-9 items-center justify-center rounded-full bg-white p-1.5 shadow-inner ring-2 ring-[#cfe5ff]">
               <Image
-                src="/images/logo.png"
+                src="/images/logo.svg"
                 alt="Open Suraksha Sahayaka"
                 width={24}
                 height={24}

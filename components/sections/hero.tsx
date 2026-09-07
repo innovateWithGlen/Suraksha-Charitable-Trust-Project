@@ -20,27 +20,24 @@ export async function HeroSection() {
 
   return (
     <section className="relative flex min-h-[85vh] items-center overflow-hidden bg-white">
-      {/* Background logo watermark */}
-      <div className="absolute inset-0" aria-hidden="true">
-        <div className="absolute inset-0 flex items-center justify-end pr-8">
-          <img
-            src="/images/logo.png"
-            alt=""
-            className="h-[min(85vh,720px)] w-auto animate-[hero-breathe_12s_ease-in-out_infinite] object-contain"
-          />
-        </div>
-      </div>
-
       {/* Content */}
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-20 md:py-28">
-        <div className="max-w-2xl animate-[hero-fade-up_0.9s_ease-out_both]">
-          <h1 className="text-balance text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center gap-6 px-4 py-20 text-center sm:px-6 md:py-28">
+        {/* Logo on top */}
+        <img
+          src="/images/logo.svg"
+          alt="Suraksha Charitable Trust logo"
+          className="h-[min(22vh,160px)] w-auto animate-[hero-fade-up_0.7s_ease-out_both] object-contain sm:h-[min(28vh,220px)] lg:h-[min(32vh,280px)]"
+        />
+
+        {/* Heading below */}
+        <div className="animate-[hero-fade-up_0.9s_ease-out_both]">
+          <h1 className="text-balance text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
             {heading}
           </h1>
-          <p className="mt-6 max-w-lg text-base leading-relaxed text-slate-600 sm:text-lg">
+          <p className="mx-auto mt-5 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base lg:text-lg">
             {subtext}
           </p>
-          <div className="mt-8 flex flex-wrap gap-4">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Button
               asChild
               size="lg"

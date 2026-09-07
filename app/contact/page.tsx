@@ -223,6 +223,8 @@ export default function ContactPage() {
       <section className="relative flex items-center overflow-hidden bg-primary py-20 lg:py-28">
         <div className="absolute inset-0">
           <img
+            srcSet="https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=640&q=75 640w, https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1200&q=75 1200w, https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1920&q=75 1920w"
+            sizes="100vw"
             src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1920&q=80"
             alt=""
             className="size-full object-cover opacity-20"

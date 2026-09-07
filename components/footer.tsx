@@ -26,7 +26,7 @@ export function Footer() {
           <div className="flex flex-col gap-4">
             <Link href="/" className="flex items-center gap-3">
               <Image
-                src="/images/logo.png"
+                src="/images/logo.svg"
                 alt="Suraksha Charitable Trust logo"
                 width={40}
                 height={40}

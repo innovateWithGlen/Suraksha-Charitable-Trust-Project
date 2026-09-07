@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import useSWR from "swr"
 import Link from "next/link"
-import { ArrowRight, X, ChevronLeft, ChevronRight, Calendar, MapPin } from "lucide-react"
+import { ArrowRight, X, Calendar, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
@@ -18,6 +18,20 @@ type ApiGalleryEvent = {
 }
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
+
+function MasonryImage({ src, alt }: { src: string; alt: string }) {
+  return (
+    <div className="mb-2 break-inside-avoid sm:mb-3">
+      <img
+        src={src}
+        alt={alt}
+        className="h-auto w-full rounded-md sm:rounded-lg"
+        loading="lazy"
+        decoding="async"
+      />
+    </div>
+  )
+}
 
 const categoryLabels: Record<ApiGalleryEvent["category"], string> = {
   education: "Education",
@@ -39,7 +53,7 @@ const categoryColors: Record<string, string> = {
 
 export default function GalleryPage() {
   const [activeCategory, setActiveCategory] = useState("all")
-  const [lightbox, setLightbox] = useState<{ eventId: string; imageIndex: number } | null>(null)
+  const [lightbox, setLightbox] = useState<{ eventId: string } | null>(null)
 
   const query = `/api/gallery?active=true${activeCategory !== "all" ? `&category=${activeCategory}` : ""}`
   const { data, isLoading } = useSWR(query, fetcher, { refreshInterval: 5000 })
@@ -51,29 +65,21 @@ export default function GalleryPage() {
     return ["all", ...unique]
   }, [events])
 
-  const openLightbox = (eventId: string, imageIndex: number) => {
-    setLightbox({ eventId, imageIndex })
+  const openLightbox = (eventId: string) => {
+    setLightbox({ eventId })
   }
 
   const closeLightbox = () => setLightbox(null)
 
   const currentEvent = lightbox ? events.find((e) => e._id === lightbox.eventId) : null
 
-  const navigateLightbox = (dir: "prev" | "next") => {
-    if (!lightbox || !currentEvent) return
-    const total = currentEvent.images.length
-    const newIndex =
-      dir === "next"
-        ? (lightbox.imageIndex + 1) % total
-        : (lightbox.imageIndex - 1 + total) % total
-    setLightbox({ ...lightbox, imageIndex: newIndex })
-  }
-
   return (
     <>
       <section className="relative flex items-center overflow-hidden bg-primary py-20 lg:py-28">
         <div className="absolute inset-0">
           <img
+            srcSet="https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=640&q=75 640w, https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=1200&q=75 1200w, https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=1920&q=75 1920w"
+            sizes="100vw"
             src="https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=1920&q=80"
             alt=""
             className="size-full object-cover opacity-20"
@@ -117,7 +123,7 @@ export default function GalleryPage() {
           ) : events.length === 0 ? (
             <div className="py-20 text-center text-muted-foreground">No gallery events available.</div>
           ) : (
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
               {events.map((event) => {
                 const images = event.images.map((item) => item.url)
                 const coverImage = images[0]
@@ -128,7 +134,7 @@ export default function GalleryPage() {
                     className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
                   >
                     <button
-                      onClick={() => openLightbox(event._id, 0)}
+                      onClick={() => openLightbox(event._id)}
                       className="relative aspect-[5/3] w-full overflow-hidden"
                     >
                       {coverImage ? (
@@ -204,7 +210,7 @@ export default function GalleryPage() {
 
       {lightbox && currentEvent && currentEvent.images.length > 0 ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/90 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           onClick={closeLightbox}
           role="dialog"
           aria-modal="true"
@@ -212,48 +218,32 @@ export default function GalleryPage() {
         >
           <button
             onClick={closeLightbox}
-            className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
+            className="fixed right-4 top-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
             aria-label="Close"
           >
             <X className="size-6" />
           </button>
 
-          {currentEvent.images.length > 1 ? (
-            <>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  navigateLightbox("prev")
-                }}
-                className="absolute left-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
-                aria-label="Previous image"
-              >
-                <ChevronLeft className="size-6" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  navigateLightbox("next")
-                }}
-                className="absolute right-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
-                aria-label="Next image"
-              >
-                <ChevronRight className="size-6" />
-              </button>
-            </>
-          ) : null}
-
-          <div className="flex max-h-[85vh] max-w-5xl flex-col items-center gap-4" onClick={(e) => e.stopPropagation()}>
-            <img
-              src={currentEvent.images[lightbox.imageIndex].url}
-              alt={`${currentEvent.title} photo ${lightbox.imageIndex + 1}`}
-              className="max-h-[75vh] w-auto rounded-lg object-contain"
-            />
-            <div className="text-center">
-              <p className="text-lg font-semibold text-white">{currentEvent.title}</p>
-              <p className="text-sm text-white/60">
-                {lightbox.imageIndex + 1} of {currentEvent.images.length}
-              </p>
+          <div className="flex min-h-full p-4">
+            <div
+              className="m-auto flex w-full max-w-5xl flex-col items-center gap-3 sm:gap-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center">
+                <p className="text-lg font-semibold text-white">{currentEvent.title}</p>
+                <p className="text-sm text-white/60">
+                  {currentEvent.images.length} photo{currentEvent.images.length > 1 ? "s" : ""}
+                </p>
+              </div>
+              <div className="w-full columns-2 [column-gap:8px] sm:columns-3 sm:[column-gap:12px] md:columns-4">
+                {currentEvent.images.map((image, i) => (
+                  <MasonryImage
+                    key={image.url || i}
+                    src={image.url}
+                    alt={`${currentEvent.title} photo ${i + 1}`}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>

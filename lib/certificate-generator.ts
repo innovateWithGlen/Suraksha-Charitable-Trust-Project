@@ -167,8 +167,8 @@ export function generateCertificateHTML(data: CertificateData): string {
                 Date of Issue: ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
               </div>
               <div class="signature">
-                Authorized Signatory<br>
-                <strong>${data.trustName}</strong>
+                Saver Monteiro<br>
+                <strong>Authorized Signatory</strong>
               </div>
             </div>
           </div>

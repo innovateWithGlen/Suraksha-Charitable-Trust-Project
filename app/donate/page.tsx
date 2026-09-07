@@ -777,7 +777,7 @@ export default function DonatePage() {
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-3 mb-3">
                     <Image
-                      src="/images/logo.png"
+                      src="/images/logo.svg"
                       alt="Suraksha Charitable Trust"
                       width={40}
                       height={40}

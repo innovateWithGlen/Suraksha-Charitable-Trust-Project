@@ -51,16 +51,18 @@ export function AboutPreviewSection() {
               alt="Children learning in a community classroom"
               className="size-full rounded-lg object-cover"
               crossOrigin="anonymous"
+              loading="lazy"
+              decoding="async"
             />
           </div>
         </div>
 
         {/* Stats */}
-        <div className="mt-16 grid grid-cols-2 gap-6 lg:grid-cols-4">
+        <div className="mt-16 flex flex-wrap justify-center gap-6">
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="flex flex-col items-center gap-1 rounded-lg bg-card p-6 text-center shadow-sm border border-border"
+              className="flex w-full flex-col items-center gap-1 rounded-lg bg-card p-6 text-center shadow-sm border border-border sm:w-auto sm:min-w-40 sm:flex-1 sm:max-w-xs"
             >
               <span className="text-3xl font-bold text-secondary">{stat.value}</span>
               <span className="text-sm text-muted-foreground">{stat.label}</span>

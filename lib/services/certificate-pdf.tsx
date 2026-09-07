@@ -1,7 +1,5 @@
 import React from "react";
-import path from "node:path";
-import { promises as fs } from "node:fs";
-import { Document, Page, Text, View, StyleSheet, Image, pdf } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, pdf } from "@react-pdf/renderer";
 import type { Readable } from "node:stream";
 
 type ReceiptPDFData = {
@@ -15,7 +13,6 @@ type ReceiptPDFData = {
   donationDate: Date;
   amount: number;
   transactionId: string;
-  logoDataUri?: string;
   trusteeName?: string;
 };
 
@@ -32,7 +29,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
-  logo: { width: 42, height: 42, borderRadius: 4 },
   heading: { fontSize: 18, fontWeight: 700, marginBottom: 4 },
   subHeading: { fontSize: 11, marginBottom: 14, color: "#334155" },
   card: {
@@ -77,7 +73,7 @@ const styles = StyleSheet.create({
 });
 
 function Receipt80GDocument({ data }: { data: ReceiptPDFData }) {
-  const trusteeName = data.trusteeName || "Managing Trustee";
+  const trusteeName = data.trusteeName || "Saver Monteiro";
   const signedAt = new Date().toISOString();
   const idLabelMap: Record<"aadhaar" | "passport" | "voterId", string> = {
     aadhaar: "Aadhaar",
@@ -96,7 +92,6 @@ function Receipt80GDocument({ data }: { data: ReceiptPDFData }) {
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            {data.logoDataUri ? <Image src={data.logoDataUri} style={styles.logo} /> : null}
             <View>
               <Text style={styles.heading}>{data.trustName}, Sirsi</Text>
             </View>
@@ -151,7 +146,7 @@ function Receipt80GDocument({ data }: { data: ReceiptPDFData }) {
           </Text>
           <View style={styles.signatureBlock}>
             <Text style={styles.signatureScript}>{trusteeName}</Text>
-            <Text style={styles.signatureMeta}>Digitally Signed by Trustee</Text>
+            <Text style={styles.signatureMeta}>Digitally Signed by Managing Trustee</Text>
             <Text style={styles.signatureMeta}>Signed at: {signedAt}</Text>
           </View>
         </View>
@@ -160,20 +155,9 @@ function Receipt80GDocument({ data }: { data: ReceiptPDFData }) {
   );
 }
 
-async function getLogoDataUri(): Promise<string | undefined> {
-  try {
-    const logoPath = path.join(process.cwd(), "public", "images", "logo.png");
-    const logoBuffer = await fs.readFile(logoPath);
-    return `data:image/png;base64,${logoBuffer.toString("base64")}`;
-  } catch {
-    return undefined;
-  }
-}
-
 export async function generate80GReceiptPDFBuffer(data: ReceiptPDFData): Promise<Buffer> {
-  const logoDataUri = await getLogoDataUri();
-  const trusteeName = process.env.TRUSTEE_SIGNATORY_NAME || "Rajesh Hegde";
-  const doc = <Receipt80GDocument data={{ ...data, logoDataUri, trusteeName }} />;
+  const trusteeName = process.env.TRUSTEE_SIGNATORY_NAME || "Saver Monteiro";
+  const doc = <Receipt80GDocument data={{ ...data, trusteeName }} />;
 
   const pdfResult = await pdf(doc).toBuffer();
 

@@ -120,10 +120,13 @@ export default function AdminGalleryPage() {
     }
   }
 
-  const uploadImageFromFile = async (file: File | null) => {
-    if (!file) return
+  const uploadImageFromFile = async (
+    file: File | null,
+    opts?: { silent?: boolean }
+  ) => {
+    if (!file) return false
 
-    setUploadingImage(true)
+    if (!opts?.silent) setUploadingImage(true)
 
     try {
       const payload = new FormData()
@@ -136,14 +139,32 @@ export default function AdminGalleryPage() {
 
       const result = await response.json().catch(() => ({}))
       if (!response.ok || !result?.url) {
-        toast.error(result.error || "Failed to upload image")
-        return
+        if (!opts?.silent) toast.error(result.error || "Failed to upload image")
+        return false
       }
 
       setFormImages((prev) => [...prev, result.url])
-      toast.success("Image uploaded")
+      if (!opts?.silent) toast.success("Image uploaded")
+      return true
+    } finally {
+      if (!opts?.silent) setUploadingImage(false)
+    }
+  }
+
+  const uploadImagesFromFiles = async (files: File[]) => {
+    setUploadingImage(true)
+    let uploaded = 0
+    let failed = 0
+    try {
+      for (const file of files) {
+        const ok = await uploadImageFromFile(file, { silent: true })
+        if (ok) uploaded++
+        else failed++
+      }
     } finally {
       setUploadingImage(false)
+      if (uploaded) toast.success(`${uploaded} image${uploaded > 1 ? "s" : ""} uploaded`)
+      if (failed) toast.error(`${failed} image${failed > 1 ? "s" : ""} failed`)
     }
   }
 
@@ -305,17 +326,20 @@ export default function AdminGalleryPage() {
                       <Input
                         type="file"
                         accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                        multiple
                         onChange={(e) => {
-                          const file = e.target.files?.[0] || null
-                          uploadImageFromFile(file)
+                          const files = Array.from(e.target.files || [])
+                          if (files.length) uploadImagesFromFiles(files)
                           e.currentTarget.value = ""
                         }}
                       />
-                      <p className="text-xs text-muted-foreground">Upload from local drive (JPG, PNG, WEBP • up to 5MB)</p>
+                      <p className="text-xs text-muted-foreground">
+                        Upload from local drive (JPG, PNG, WEBP • up to 5MB each) — select multiple files to upload at once
+                      </p>
                     </div>
                   )}
 
-                  {uploadingImage ? <p className="mt-2 text-xs text-muted-foreground">Uploading image...</p> : null}
+                  {uploadingImage ? <p className="mt-2 text-xs text-muted-foreground">Uploading images...</p> : null}
 
                   {formImages.length > 0 ? (
                     <div className="mt-3 grid grid-cols-3 gap-3">

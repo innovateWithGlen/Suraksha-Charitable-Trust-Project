@@ -136,6 +136,8 @@ export default async function WhatWeDoPage() {
       <section className="relative flex items-center overflow-hidden bg-primary py-20 lg:py-28">
         <div className="absolute inset-0">
           <img
+            srcSet="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=640&q=75 640w, https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1200&q=75 1200w, https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920&q=75 1920w"
+            sizes="100vw"
             src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920&q=80"
             alt=""
             className="size-full object-cover opacity-20"
@@ -187,6 +189,8 @@ export default async function WhatWeDoPage() {
                       alt={program.imageAlt}
                       className="aspect-[4/3] w-full rounded-lg object-cover"
                       crossOrigin="anonymous"
+                      loading="lazy"
+                      decoding="async"
                     />
                   </div>
                   <div
