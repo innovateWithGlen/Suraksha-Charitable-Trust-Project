@@ -30,7 +30,7 @@ async function seed() {
   const seedContent = [
     {
       type: "hero",
-      title: "Empowering Communities with Care",
+      title: "Suraksha Charitable Trust (R)",
       subtitle: "Suraksha Charitable Trust",
       content:
         "Join us in supporting education, healthcare, and sustainable livelihoods for underprivileged communities.",

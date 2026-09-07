@@ -2,15 +2,10 @@ import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import dbConnect from "@/lib/mongodb";
 import { Donation } from "@/lib/models";
+import { getPaymentConfig, PaymentConfigError } from "@/lib/payment-config";
 
-const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
-const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
-const isDemoMode =
-  !razorpayKeyId ||
-  !razorpayKeySecret ||
-  process.env.DEMO_PAYMENTS === "true";
-
-// POST /api/payments/create-order - Create Razorpay order for an existing donation
+// POST /api/payments/create-order - Create a Razorpay order for an existing donation.
+// Uses the key pair selected by the Admin > Settings test-mode toggle.
 export async function POST(request: Request) {
   try {
     const { donationId, amount } = await request.json();
@@ -22,9 +17,10 @@ export async function POST(request: Request) {
       );
     }
 
+    const config = await getPaymentConfig();
+
     await dbConnect();
 
-    // The donation record is the source of truth for the amount.
     const donation = await Donation.findById(donationId);
     if (!donation) {
       return NextResponse.json(
@@ -52,38 +48,20 @@ export async function POST(request: Request) {
     }
 
     // Reject a client-supplied amount that disagrees with the stored donation.
-    if (amount !== undefined && amount !== null && Math.round(Number(amount)) !== payAmount) {
+    if (
+      amount !== undefined &&
+      amount !== null &&
+      Math.round(Number(amount)) !== payAmount
+    ) {
       return NextResponse.json(
         { error: "Amount does not match the donation record" },
         { status: 400 }
       );
     }
 
-    if (isDemoMode) {
-      const demoOrderId = `demo_order_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
-      await Donation.findByIdAndUpdate(donationId, {
-        razorpayOrderId: demoOrderId,
-      });
-
-      return NextResponse.json({
-        orderId: demoOrderId,
-        amount: payAmount * 100,
-        currency: "INR",
-        key: null,
-        demoMode: true,
-      });
-    }
-
-    if (!razorpayKeyId || !razorpayKeySecret) {
-      return NextResponse.json(
-        { error: "Payment gateway is not configured" },
-        { status: 503 }
-      );
-    }
-
     const razorpay = new Razorpay({
-      key_id: razorpayKeyId,
-      key_secret: razorpayKeySecret,
+      key_id: config.keyId,
+      key_secret: config.keySecret,
     });
 
     // Create Razorpay order (amount in paise) against the stored donation.
@@ -104,10 +82,13 @@ export async function POST(request: Request) {
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
-      key: razorpayKeyId,
-      demoMode: false,
+      key: config.keyId,
+      mode: config.mode,
     });
   } catch (error) {
+    if (error instanceof PaymentConfigError) {
+      return NextResponse.json({ error: error.message }, { status: 503 });
+    }
     console.error("Create order error:", error);
     return NextResponse.json(
       { error: "Failed to create payment order" },

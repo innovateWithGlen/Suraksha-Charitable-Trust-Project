@@ -23,8 +23,6 @@ type SettingsForm = {
   orgPhone: string
   orgAddress: string
   workingHours: string
-  razorpayKeyId: string
-  razorpayKeySecret: string
   paymentTestMode: boolean
   notifyNewDonation: boolean
   notifyFailedTransactions: boolean
@@ -39,8 +37,6 @@ const defaultSettings: SettingsForm = {
   orgPhone: "+91 99999-00000",
   orgAddress: "India",
   workingHours: "Mon - Sat: 9:00 AM - 6:00 PM",
-  razorpayKeyId: "",
-  razorpayKeySecret: "",
   paymentTestMode: true,
   notifyNewDonation: true,
   notifyFailedTransactions: true,
@@ -84,9 +80,6 @@ export default function SettingsPage() {
         orgPhone: general.orgPhone || defaultSettings.orgPhone,
         orgAddress: general.orgAddress || defaultSettings.orgAddress,
         workingHours: general.workingHours || defaultSettings.workingHours,
-        razorpayKeyId: payment.razorpayKeyId || defaultSettings.razorpayKeyId,
-        razorpayKeySecret:
-          payment.razorpayKeySecret || defaultSettings.razorpayKeySecret,
         paymentTestMode: toBoolean(
           payment.paymentTestMode,
           defaultSettings.paymentTestMode
@@ -139,16 +132,6 @@ export default function SettingsPage() {
             key: "workingHours",
             value: form.workingHours,
             category: "general",
-          },
-          {
-            key: "razorpayKeyId",
-            value: form.razorpayKeyId,
-            category: "payment",
-          },
-          {
-            key: "razorpayKeySecret",
-            value: form.razorpayKeySecret,
-            category: "payment",
           },
           {
             key: "paymentTestMode",
@@ -294,29 +277,19 @@ export default function SettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label>Razorpay Key ID</Label>
-              <Input
-                type="password"
-                value={form.razorpayKeyId}
-                onChange={(e) =>
-                  setForm((s) => ({ ...s, razorpayKeyId: e.target.value }))
-                }
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label>Razorpay Key Secret</Label>
-              <Input
-                type="password"
-                value={form.razorpayKeySecret}
-                onChange={(e) =>
-                  setForm((s) => ({ ...s, razorpayKeySecret: e.target.value }))
-                }
-                className="mt-1"
-              />
-            </div>
+          <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
+            Razorpay keys are read from the server environment. Payments use the
+            pair matching the mode below:
+            <ul className="mt-2 list-inside list-disc space-y-1">
+              <li>
+                <span className="font-medium text-foreground">Test mode ON</span>{" "}
+                → uses RAZORPAY_TEST_KEY_ID / RAZORPAY_TEST_KEY_SECRET
+              </li>
+              <li>
+                <span className="font-medium text-foreground">Test mode OFF</span>{" "}
+                → uses RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET (live charges)
+              </li>
+            </ul>
           </div>
           <div className="flex items-center gap-3">
             <Switch
@@ -326,9 +299,15 @@ export default function SettingsPage() {
               }
               id="test-mode"
             />
-            <Label htmlFor="test-mode" className="text-sm">
-              Test Mode (no real charges)
-            </Label>
+            <div className="flex flex-col">
+              <Label htmlFor="test-mode" className="text-sm font-medium">
+                Razorpay Test Mode
+              </Label>
+              <span className="text-xs text-muted-foreground">
+                ON: test payments (visible in the Razorpay dashboard under Test
+                Mode). OFF: real payments.
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -182,33 +182,13 @@ export default function DonatePage() {
       })
 
       if (!orderRes.ok) {
+        const err = await orderRes.json().catch(() => ({}))
+        setFormError(err?.error || "Unable to start the payment. Please try again.")
         setStep("failure")
         return
       }
 
       const orderData = await orderRes.json()
-
-      if (orderData.demoMode) {
-        const verifyRes = await fetch("/api/payments/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            donationId: donationData.donation._id,
-            razorpay_order_id: orderData.orderId,
-            razorpay_payment_id: `demo_pay_${Date.now()}`,
-            razorpay_signature: "demo_signature",
-          }),
-        })
-
-        if (verifyRes.ok) {
-          const verifyData = await verifyRes.json()
-          setTxnId(verifyData?.donation?.transactionId || donationData.transactionId)
-          setStep("success")
-        } else {
-          setStep("failure")
-        }
-        return
-      }
 
       const options = {
         key: orderData.key,
@@ -241,6 +221,8 @@ export default function DonatePage() {
             setTxnId(response.razorpay_payment_id)
             setStep("success")
           } else {
+            const err = await verifyRes.json().catch(() => ({}))
+            setFormError(err?.error || "The payment could not be confirmed. Please try again.")
             setStep("failure")
           }
         },
@@ -400,9 +382,8 @@ export default function DonatePage() {
 
             <div className="w-full rounded-lg bg-red-100/50 p-4">
               <p className="text-sm text-red-700">
-                The payment could not be processed. Please check your payment
-                details and try again. If the issue persists, contact your bank
-                or our support team.
+                {formError ||
+                  "The payment could not be processed. Please check your payment details and try again. If the issue persists, contact your bank or our support team."}
               </p>
             </div>
 

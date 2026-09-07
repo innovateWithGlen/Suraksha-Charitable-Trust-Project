@@ -13,7 +13,7 @@ export async function HeroSection() {
     .sort({ order: 1, updatedAt: -1 })
     .lean()
 
-  const heading = heroContent?.title || "Empowering Lives Through Care & Compassion"
+  const heading = heroContent?.title || "Suraksha Charitable Trust (R)"
   const subtext =
     heroContent?.content ||
     "We are a children-focused charity organization dedicated to improving young lives through education, healthcare, protection, and community support."

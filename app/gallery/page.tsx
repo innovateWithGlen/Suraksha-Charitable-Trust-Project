@@ -129,7 +129,7 @@ export default function GalleryPage() {
                   >
                     <button
                       onClick={() => openLightbox(event._id, 0)}
-                      className="relative aspect-[4/3] w-full overflow-hidden"
+                      className="relative aspect-[5/3] w-full overflow-hidden"
                     >
                       {coverImage ? (
                         <img

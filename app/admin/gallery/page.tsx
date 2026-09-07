@@ -320,7 +320,7 @@ export default function AdminGalleryPage() {
                   {formImages.length > 0 ? (
                     <div className="mt-3 grid grid-cols-3 gap-3">
                       {formImages.map((img, idx) => (
-                        <div key={idx} className="group relative aspect-square overflow-hidden rounded-lg border border-border">
+                        <div key={idx} className="group relative aspect-[5/3] overflow-hidden rounded-lg border border-border">
                           <img src={img} alt={`Event image ${idx + 1}`} className="size-full object-cover" />
                           <button
                             type="button"

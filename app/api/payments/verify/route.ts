@@ -5,8 +5,9 @@ import dbConnect from "@/lib/mongodb";
 import { Donation, Donor } from "@/lib/models";
 import { sendDonationConfirmation } from "@/lib/email";
 import { generateReceiptForDonation } from "@/lib/services/certificate-service";
+import { getPaymentConfig, PaymentConfigError } from "@/lib/payment-config";
 
-// POST /api/payments/verify - Verify Razorpay payment and complete donation
+// POST /api/payments/verify - Verify Razorpay payment and complete the donation.
 export async function POST(request: Request) {
   try {
     const {
@@ -23,17 +24,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
-    const demoMode =
-      !razorpayKeySecret && process.env.DEMO_PAYMENTS === "true";
-
-    // Fail closed: without a configured secret, only explicit demo mode works.
-    if (!razorpayKeySecret && !demoMode) {
-      return NextResponse.json(
-        { error: "Payment gateway is not configured" },
-        { status: 503 }
-      );
-    }
+    const config = await getPaymentConfig();
 
     await dbConnect();
 
@@ -65,7 +56,14 @@ export async function POST(request: Request) {
       });
     }
 
-    if (!demoMode && razorpayKeySecret) {
+    const razorpay = new Razorpay({
+      key_id: config.keyId,
+      key_secret: config.keySecret,
+    });
+
+    let paymentMethod = "upi";
+
+    try {
       // Signature must be present and valid.
       if (!razorpay_payment_id || !razorpay_signature) {
         return NextResponse.json(
@@ -76,7 +74,7 @@ export async function POST(request: Request) {
 
       const body = `${razorpay_order_id}|${razorpay_payment_id}`;
       const expectedSignature = crypto
-        .createHmac("sha256", razorpayKeySecret)
+        .createHmac("sha256", config.keySecret)
         .update(body)
         .digest("hex");
 
@@ -87,39 +85,38 @@ export async function POST(request: Request) {
         );
       }
 
-      // Server-side truth for the order: amount must match the donation
-      // and Razorpay must have settled the order as paid.
-      const razorpay = new Razorpay({
-        key_id: process.env.RAZORPAY_KEY_ID as string,
-        key_secret: razorpayKeySecret,
-      });
-
-      try {
-        const paidOrder = await razorpay.orders.fetch(razorpay_order_id);
-        if (paidOrder?.amount !== donation.amount * 100) {
-          return NextResponse.json(
-            { error: "Payment amount does not match the donation" },
-            { status: 400 }
-          );
-        }
-        if (paidOrder?.status !== "paid") {
-          return NextResponse.json(
-            { error: "Payment has not been completed" },
-            { status: 400 }
-          );
-        }
-      } catch (orderError) {
-        console.error("Failed to fetch Razorpay order:", orderError);
+      // Server-side truth: order must be settled as paid with the right amount,
+      // and the payment must belong to this order.
+      const [paidOrder, payment] = await Promise.all([
+        razorpay.orders.fetch(razorpay_order_id),
+        razorpay.payments.fetch(razorpay_payment_id),
+      ]);
+      if (paidOrder?.amount !== donation.amount * 100) {
         return NextResponse.json(
-          { error: "Could not confirm payment status" },
+          { error: "Payment amount does not match the donation" },
           { status: 400 }
         );
       }
+      if (paidOrder?.status !== "paid") {
+        return NextResponse.json(
+          { error: "Payment has not been completed" },
+          { status: 400 }
+        );
+      }
+      if (payment?.order_id !== razorpay_order_id) {
+        return NextResponse.json(
+          { error: "Payment does not match this order" },
+          { status: 400 }
+        );
+      }
+      paymentMethod = typeof payment?.method === "string" ? payment.method : "upi";
+    } catch (orderError) {
+      console.error("Failed to verify Razorpay payment:", orderError);
+      return NextResponse.json(
+        { error: "Could not confirm payment status" },
+        { status: 400 }
+      );
     }
-
-    const resolvedTxnId =
-      razorpay_payment_id ||
-      `demo_pay_${crypto.randomUUID().slice(0, 8)}`;
 
     // Atomic claim: only transition from pending/failed, so a payment is
     // processed exactly once (no double email / stats / 80G aggregation).
@@ -128,13 +125,13 @@ export async function POST(request: Request) {
       {
         $set: {
           status: "completed",
-          transactionId: resolvedTxnId,
-          razorpayPaymentId: razorpay_payment_id || undefined,
-          razorpaySignature: razorpay_signature || undefined,
-          method: razorpay_payment_id ? "upi" : "other",
+          transactionId: razorpay_payment_id,
+          razorpayPaymentId: razorpay_payment_id,
+          razorpaySignature: razorpay_signature,
+          method: paymentMethod,
         },
       },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     if (!claimed) {
@@ -196,6 +193,9 @@ export async function POST(request: Request) {
       receipt,
     });
   } catch (error) {
+    if (error instanceof PaymentConfigError) {
+      return NextResponse.json({ error: error.message }, { status: 503 });
+    }
     console.error("Payment verification error:", error);
     return NextResponse.json(
       { error: "Payment verification failed" },
