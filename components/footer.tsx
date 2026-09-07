@@ -112,7 +112,8 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="mt-12 border-t border-primary-foreground/10 pt-6 text-center text-xs text-primary-foreground/50">
           <p>
-            &copy; {new Date().getFullYear()} Suraksha Charitable Trust. All rights reserved. 
+            &copy; {new Date().getFullYear()} Suraksha Charitable Trust. All
+            rights reserved.{" "}
             <a href="https://www.linkedin.com/in/glen-monteiro/" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/50 hover:text-accent">
               Designed by Glen Monteiro
             </a>

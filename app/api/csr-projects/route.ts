@@ -3,10 +3,21 @@ import { auth } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
 import { CSRProject } from "@/lib/models";
 import { csrProjectSchema, paginationSchema } from "@/lib/validations";
+import { isCsrSectionEnabled } from "@/lib/section-visibility";
 
 export async function GET(request: Request) {
   try {
     await dbConnect();
+
+    // Public listing is hidden when the CSR section is disabled in settings.
+    // Admins (authenticated) can still manage projects.
+    const session = await auth();
+    if (!session && !(await isCsrSectionEnabled())) {
+      return NextResponse.json(
+        { error: "CSR projects section is currently disabled" },
+        { status: 403 }
+      );
+    }
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") || undefined;

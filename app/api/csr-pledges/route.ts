@@ -5,6 +5,7 @@ import { CSRPledge, CSRProject } from "@/lib/models";
 import { recomputeProjectRaisedAmount } from "@/lib/csr-helpers";
 import { csrPledgeSchema, paginationSchema } from "@/lib/validations";
 import { sendCSRPledgeAdminNotification } from "@/lib/email";
+import { isCsrSectionEnabled } from "@/lib/section-visibility";
 
 export async function GET(request: Request) {
   try {
@@ -69,6 +70,16 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     await dbConnect();
+
+    // Public pledges are blocked when the CSR section is disabled.
+    const session = await auth();
+    if (!session && !(await isCsrSectionEnabled())) {
+      return NextResponse.json(
+        { error: "CSR projects section is currently disabled" },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const validated = csrPledgeSchema.parse(body);
 

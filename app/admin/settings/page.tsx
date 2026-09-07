@@ -24,6 +24,7 @@ type SettingsForm = {
   orgAddress: string
   workingHours: string
   paymentTestMode: boolean
+  csrProjectsEnabled: boolean
   notifyNewDonation: boolean
   notifyFailedTransactions: boolean
   notifyWeeklySummary: boolean
@@ -38,6 +39,7 @@ const defaultSettings: SettingsForm = {
   orgAddress: "India",
   workingHours: "Mon - Sat: 9:00 AM - 6:00 PM",
   paymentTestMode: true,
+  csrProjectsEnabled: true,
   notifyNewDonation: true,
   notifyFailedTransactions: true,
   notifyWeeklySummary: false,
@@ -83,6 +85,10 @@ export default function SettingsPage() {
         paymentTestMode: toBoolean(
           payment.paymentTestMode,
           defaultSettings.paymentTestMode
+        ),
+        csrProjectsEnabled: toBoolean(
+          general.csrProjectsEnabled,
+          defaultSettings.csrProjectsEnabled
         ),
         notifyNewDonation: toBoolean(
           notification.notifyNewDonation,
@@ -137,6 +143,11 @@ export default function SettingsPage() {
             key: "paymentTestMode",
             value: String(form.paymentTestMode),
             category: "payment",
+          },
+          {
+            key: "csrProjectsEnabled",
+            value: String(form.csrProjectsEnabled),
+            category: "general",
           },
           {
             key: "notifyNewDonation",
@@ -306,6 +317,37 @@ export default function SettingsPage() {
               <span className="text-xs text-muted-foreground">
                 ON: test payments (visible in the Razorpay dashboard under Test
                 Mode). OFF: real payments.
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Website Sections */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Website Sections</CardTitle>
+          <CardDescription>
+            Show or hide public sections of the website
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={form.csrProjectsEnabled}
+              onCheckedChange={(value) =>
+                setForm((s) => ({ ...s, csrProjectsEnabled: value }))
+              }
+              id="csr-projects-enabled"
+            />
+            <div className="flex flex-col">
+              <Label htmlFor="csr-projects-enabled" className="text-sm font-medium">
+                CSR Projects Section
+              </Label>
+              <span className="text-xs text-muted-foreground">
+                ON: the public Adopt a Project page and CSR Openings nav link
+                are visible. OFF: hides them from visitors (admin management
+                still works).
               </span>
             </div>
           </div>

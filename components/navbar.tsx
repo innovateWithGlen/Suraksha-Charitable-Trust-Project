@@ -29,10 +29,23 @@ export function Navbar() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [csrEnabled, setCsrEnabled] = useState(true)
 
   useEffect(() => {
     setMounted(true)
+    fetch("/api/public/settings")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data && typeof data.csrProjectsEnabled === "boolean") {
+          setCsrEnabled(data.csrProjectsEnabled)
+        }
+      })
+      .catch(() => {})
   }, [])
+
+  const visibleLinks = csrEnabled
+    ? navLinks
+    : navLinks.filter((link) => link.href !== "/adopt-project")
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
@@ -53,7 +66,7 @@ export function Navbar() {
 
         {/* Desktop nav */}
         <nav className="hidden lg:flex items-center gap-8" aria-label="Main navigation">
-          {navLinks.map((link) => (
+          {visibleLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -103,7 +116,7 @@ export function Navbar() {
                 </SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col gap-1 px-4" aria-label="Mobile navigation">
-                {navLinks.map((link) => (
+                {visibleLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}

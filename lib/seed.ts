@@ -65,6 +65,7 @@ async function seed() {
 
   const settings = [
     { key: "orgName", value: "Suraksha Charitable Trust", category: "general" },
+    { key: "csrProjectsEnabled", value: "true", category: "general" },
     { key: "orgEmail", value: "SurakshaCharitableTrust@gmail.com", category: "general" },
     { key: "orgPhone", value: "+91 99999-00000", category: "general" },
     { key: "whatsApp", value: process.env.NEXT_PUBLIC_TRUST_WHATSAPP_NUMBER || "919876543210", category: "social" },

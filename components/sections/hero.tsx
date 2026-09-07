@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { unstable_noStore as noStore } from "next/cache"
 import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -22,15 +23,19 @@ export async function HeroSection() {
     <section className="relative flex min-h-[85vh] items-center overflow-hidden bg-white">
       {/* Content */}
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center gap-6 px-4 py-20 text-center sm:px-6 md:py-28">
-        {/* Logo on top */}
-        <img
+        {/* Logo comes in first */}
+        <Image
           src="/images/logo.svg"
           alt="Suraksha Charitable Trust logo"
-          className="h-[min(22vh,160px)] w-auto animate-[hero-fade-up_0.7s_ease-out_both] object-contain sm:h-[min(28vh,220px)] lg:h-[min(32vh,280px)]"
+          width={650}
+          height={509}
+          priority
+          sizes="(max-width: 640px) 40vw, (max-width: 1024px) 32vw, 280px"
+          className="h-[min(22vh,160px)] w-auto object-contain sm:h-[min(28vh,220px)] lg:h-[min(32vh,280px)]"
         />
 
-        {/* Heading below */}
-        <div className="animate-[hero-fade-up_0.9s_ease-out_both]">
+        {/* Title, subtext, buttons follow in sequence */}
+        <div>
           <h1 className="text-balance text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
             {heading}
           </h1>

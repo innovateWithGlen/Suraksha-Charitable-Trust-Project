@@ -28,6 +28,9 @@ export default function AdoptProjectPage() {
     { refreshInterval: 5000 }
   );
 
+  const { data: publicSettings } = useSWR("/api/public/settings", fetcher);
+  const csrEnabled = publicSettings?.csrProjectsEnabled !== false;
+
   const projects = (data?.projects || []) as CSRProject[];
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const pledgeSelectRef = useRef<HTMLSelectElement | null>(null);
@@ -102,15 +105,27 @@ export default function AdoptProjectPage() {
           </p>
         </div>
 
-        {isLoading ? (
-          <p className="mt-10 text-center text-muted-foreground">Loading projects...</p>
-        ) : (
-          <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {projects.map((project) => (
-              <CSRProjectCard key={project._id} project={project} onPledge={handleAdoptClick} />
-            ))}
+        {!csrEnabled ? (
+          <div className="mx-auto mt-10 max-w-xl rounded-xl border border-border bg-card p-8 text-center">
+            <h2 className="text-xl font-semibold text-foreground">
+              CSR projects are currently unavailable
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              The trust has temporarily hidden this section. Please check back
+              later or contact us directly for CSR partnership inquiries.
+            </p>
           </div>
-        )}
+        ) : (
+          <>
+            {isLoading ? (
+              <p className="mt-10 text-center text-muted-foreground">Loading projects...</p>
+            ) : (
+              <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {projects.map((project) => (
+                  <CSRProjectCard key={project._id} project={project} onPledge={handleAdoptClick} />
+                ))}
+              </div>
+            )}
 
         <section ref={pledgeSectionRef} id="corporate-pledge" className="mt-12">
         <Card>
@@ -166,9 +181,11 @@ export default function AdoptProjectPage() {
               </Button>
               {message ? <p className="mt-3 text-sm text-muted-foreground">{message}</p> : null}
             </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
         </section>
+          </>
+        )}
       </div>
     </section>
   );
