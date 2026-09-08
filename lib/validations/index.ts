@@ -152,12 +152,24 @@ export const contentSchema = z.object({
 export const contentUpdateSchema = contentSchema.partial();
 
 // Gallery schemas
-export const galleryEventSchema = z.object({
+const galleryCategoryEnum = z.enum([
+  "education",
+  "healthcare",
+  "environment",
+  "community",
+  "events",
+  "co-curricular",
+  "extracurricular",
+  "other",
+]);
+
+const galleryEventBaseSchema = z.object({
   title: z.string().min(1, "Title is required"),
-  category: z.enum(["education", "healthcare", "environment", "community", "events", "other"]),
+  category: galleryCategoryEnum,
+  customCategory: z.string().trim().max(60, "Custom category is too long").optional().or(z.literal("")),
   date: z.string().or(z.date()),
   location: z.string().min(1, "Location is required"),
-  description: z.string().optional(),
+  description: z.string().trim().max(2000, "Description is too long").optional().or(z.literal("")),
   images: z
     .array(
       z.object({
@@ -169,7 +181,22 @@ export const galleryEventSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
-export const galleryEventUpdateSchema = galleryEventSchema.partial();
+function requireCustomCategoryForOther(
+  data: { category?: string; customCategory?: string },
+  ctx: z.RefinementCtx
+) {
+  if (data.category === "other" && !data.customCategory?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["customCategory"],
+      message: "Custom category is required when category is Other",
+    });
+  }
+}
+
+export const galleryEventSchema = galleryEventBaseSchema.superRefine(requireCustomCategoryForOther);
+
+export const galleryEventUpdateSchema = galleryEventBaseSchema.partial().superRefine(requireCustomCategoryForOther);
 
 // Contact schemas
 export const contactSchema = z.object({

@@ -11,17 +11,17 @@ const quickLinks = [
 ]
 
 const programs = [
-  "Education Support",
-  "Healthcare Outreach",
-  "Environmental Care",
-  "Community Welfare",
+  { label: "Education Development", href: "/gallery" },
+  { label: "Medical Relief", href: "/gallery" },
+  { label: "Relief to Poor", href: "/gallery" },
+  { label: "Cultural Activities", href: "/gallery" },
 ]
 
 export function Footer() {
   return (
     <footer className="bg-primary text-primary-foreground">
-      <div className="mx-auto max-w-7xl px-6 py-12 lg:py-16">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto max-w-7xl px-6 py-10 lg:py-14">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-10">
           {/* About column */}
           <div className="flex flex-col gap-4">
             <Link href="/" className="flex items-center gap-3">
@@ -40,8 +40,8 @@ export function Footer() {
               </div>
             </Link>
             <p className="text-sm text-primary-foreground/70 leading-relaxed">
-              Empowering lives through education, healthcare, protection, and
-              community support across India.
+              Serving all of humanity through education, healthcare, relief to
+              the poor, and cultural development — Sirsi, Karnataka.
             </p>
           </div>
 
@@ -70,11 +70,13 @@ export function Footer() {
             </h3>
             <ul className="flex flex-col gap-2">
               {programs.map((program) => (
-                <li
-                  key={program}
-                  className="text-sm text-primary-foreground/60"
-                >
-                  {program}
+                <li key={program.label}>
+                  <Link
+                    href={program.href}
+                    className="text-sm text-primary-foreground/60 transition-colors hover:text-accent"
+                  >
+                    {program.label}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -103,7 +105,7 @@ export function Footer() {
               </a>
               <div className="flex items-start gap-2">
                 <MapPin className="mt-0.5 size-4 shrink-0" />
-                <span>India</span>
+                <span>Sirsi, Karnataka, India</span>
               </div>
             </div>
           </div>

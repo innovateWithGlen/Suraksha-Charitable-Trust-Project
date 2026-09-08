@@ -1,11 +1,26 @@
 import type { Metadata } from "next"
 import { Heart, Eye, Users, Target } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
+import { OrganizationSchema } from "@/components/seo"
 
 export const metadata: Metadata = {
-  title: "About Us | Suraksha Charitable Trust",
+  title: "About Us",
   description:
-    "Learn about our mission, vision, and the team behind Suraksha Charitable Trust.",
+    "Learn about Suraksha Charitable Trust — registered on 3rd January 2022 under Indian Trust Act, 1882. Our mission, vision, promoters, and activities for education, healthcare, and community welfare.",
+  keywords: [
+    "about Suraksha Charitable Trust",
+    "NGO Sirsi Karnataka",
+    "Lavina Monteiro",
+    "Saver Monteiro",
+    "Indian Trust Act 1882",
+    "charitable trust India",
+  ],
+  openGraph: {
+    title: "About Us | Suraksha Charitable Trust",
+    description:
+      "Registered on 3rd January 2022 under Indian Trust Act, 1882. Serving all humanity through education, healthcare, and community development.",
+    url: "https://www.surakshatrustin.org/about",
+  },
 }
 
 const values = [
@@ -13,31 +28,31 @@ const values = [
     icon: Heart,
     title: "Our Mission",
     description:
-      "To empower underprivileged communities by providing access to education, healthcare, and sustainable livelihood opportunities.",
+      "To render service to all people irrespective of language, race, region, religion, community, caste or creed — promoting welfare of society through education, healthcare, relief to the poor, and cultural development without any profit motive.",
   },
   {
     icon: Eye,
     title: "Our Vision",
     description:
-      "A world where every individual, regardless of background, has the opportunity to live a dignified and fulfilling life.",
+      "To make mankind blossom with excellence and altruism, providing access to education, healthcare, and sustainable livelihood opportunities for the underprivileged.",
   },
 ]
 
 const stats = [
   { value: "4+", label: "Years of Service" },
-  { value: "5,00+", label: "Lives Impacted" },
-  // { value: "200+", label: "Volunteers" },
-  { value: "7+", label: "Projects Completed" },
+  { value: "500+", label: "Lives Impacted" },
+  { value: "7+", label: "Total Projects" },
 ]
 
 const team = [
-  { name: "Saver Monteiro", role: "Managing Trustee" },
-  { name: "Lavina Monteiro", role: "President" },
+  { name: "Lavina Saver Monteiro", role: "President & Key Promoter" },
+  { name: "Saver Salvador Monteiro", role: "Managing Trustee & Key Promoter" },
 ]
 
 export default function AboutPage() {
   return (
     <>
+      <OrganizationSchema page="about" />
       {/* Hero banner */}
       <section className="relative flex items-center overflow-hidden bg-primary py-20 lg:py-28">
         <div className="absolute inset-0">
@@ -56,8 +71,8 @@ export default function AboutPage() {
             About Suraksha Charitable Trust
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-primary-foreground/70 leading-relaxed">
-            Dedicated to transforming lives and building stronger communities
-            since 2015.
+            Registered on 3rd January 2022 under the Indian Trust Act, 1882,
+            dedicated to serving all of humanity.
           </p>
         </div>
       </section>
@@ -107,27 +122,35 @@ export default function AboutPage() {
                 / Our Story /
               </span>
               <h2 className="text-pretty text-3xl font-bold text-foreground sm:text-4xl">
-                A Decade of Making a Difference
+                Our Journey of Service
               </h2>
               <div className="flex flex-col gap-4 text-base leading-relaxed text-muted-foreground">
                 <p>
-                  Suraksha Charitable Trust was founded in 2015 by a group of
-                  passionate individuals who believed that everyone deserves a
-                  fair chance at life. What started as a small community
-                  initiative in a single village has grown into a movement
-                  touching thousands of lives.
+                  Suraksha Charitable Trust (R) was registered on 3rd January
+                  2022 under the Indian Trust Act, 1882 to take up activities
+                  without any profit motive. It aims at the good of all mankind
+                  irrespective of caste, creed, and religion.
                 </p>
                 <p>
-                  Over the years, we have expanded our reach across multiple
-                  states, partnering with local organizations, government
-                  bodies, and international NGOs to amplify our impact. Our
-                  focus remains on education, healthcare, environmental
-                  sustainability, and community empowerment.
+                  The Trust was promoted by Mrs. Lavina Saver Monteiro and Mr.
+                  Saver Salvador Monteiro, renowned social workers and
+                  philanthropists who have been involved in various social
+                  organizations and institutions, imparting charitable activities
+                  for the welfare of mankind.
                 </p>
                 <p>
-                  Today, Suraksha Trust stands as a beacon of hope for
-                  countless families, and we continue to grow, driven by the
-                  belief that collective action creates lasting change.
+                  The Trust primarily engages in Relief of the Poor, Education,
+                  Student Hostel, Old Age Home and Orphans, Medical Relief,
+                  promotion of Indian Classical Dance, Music, Art, Culture,
+                  Literature, Science, Sports, Health, Environmental protection,
+                  and creating awareness on environmental and ecological
+                  developments for public benefit.
+                </p>
+                <p>
+                  The Trust has successfully carried out its own programmes
+                  without expecting any publicity, and continues to broaden its
+                  objectives to carry out tremendous activities for the
+                  betterment of society.
                 </p>
               </div>
             </div>
@@ -209,18 +232,18 @@ export default function AboutPage() {
             {[
               {
                 icon: Heart,
-                title: "Compassion",
-                desc: "We lead with empathy and kindness in every interaction.",
+                title: "Service to All",
+                desc: "We serve all people irrespective of language, race, region, religion, community, caste, or creed.",
               },
               {
                 icon: Target,
-                title: "Integrity",
-                desc: "Transparency and honesty guide all our decisions and actions.",
+                title: "Selfless Service",
+                desc: "We carry out our activities without any profit motive and without expecting any publicity.",
               },
               {
                 icon: Users,
-                title: "Community",
-                desc: "We believe in the power of people coming together for change.",
+                title: "Community Welfare",
+                desc: "We believe in the power of collective action to create lasting change for the underprivileged.",
               },
             ].map((value) => {
               const Icon = value.icon

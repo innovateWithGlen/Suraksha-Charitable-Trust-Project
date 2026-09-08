@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button"
 
 const stats = [
   { value: "4+", label: "Years of Service" },
-  { value: "5,00+", label: "Lives Impacted" },
-  // { value: "200+", label: "Volunteers" },
-  { value: "7+", label: "Projects Completed" },
+  { value: "500+", label: "Lives Impacted" },
+  { value: "7+", label: "Total Projects" },
 ]
 
 export function AboutPreviewSection() {
@@ -22,15 +21,15 @@ export function AboutPreviewSection() {
           {/* Text */}
           <div className="flex flex-col justify-center gap-6">
             <p className="text-base leading-relaxed text-muted-foreground">
-              Founded with a vision to empower the underprivileged, Suraksha
-              Charitable Trust has been at the forefront of community
-              development for over a decade. We believe every child deserves
-              access to quality education, healthcare, and a safe environment.
+              Suraksha Charitable Trust (R) was registered on 3rd January 2022
+              under the Indian Trust Act, 1882. Founded with a vision to make
+              mankind blossom with excellence and altruism, we serve all people
+              irrespective of caste, creed, and religion.
             </p>
             <p className="text-base leading-relaxed text-muted-foreground">
-              Our programs span across education, healthcare outreach,
-              environmental initiatives, and community welfare, touching
-              thousands of lives across India.
+              Our programs span across education, healthcare, relief to the
+              poor, environmental protection, and cultural development —
+              touching lives in Sirsi and beyond without any profit motive.
             </p>
             <Button
               asChild

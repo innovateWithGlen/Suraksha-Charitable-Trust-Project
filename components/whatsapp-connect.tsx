@@ -7,7 +7,7 @@ function getWhatsAppUrl(message: string, number?: string) {
     number ||
     process.env.NEXT_PUBLIC_TRUST_WHATSAPP_NUMBER ||
     process.env.TRUST_WHATSAPP_NUMBER ||
-    "919353678546"
+    "917892351129"
   return `https://wa.me/${targetNumber}?text=${encodeURIComponent(message)}`
 }
 

@@ -4,6 +4,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   serverExternalPackages: ["mongoose"],
+  allowedDevOrigins: ["10.167.241.106"],
   images: {
     unoptimized: true,
     remotePatterns: [

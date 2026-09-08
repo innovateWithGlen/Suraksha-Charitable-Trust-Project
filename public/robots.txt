@@ -1,0 +1,7 @@
+# Suraksha Charitable Trust
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
+Sitemap: https://www.surakshatrustin.org/sitemap.xml

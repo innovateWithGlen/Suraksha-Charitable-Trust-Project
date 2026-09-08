@@ -81,7 +81,7 @@ const fallbackFaqs = [
   {
     question: "How do I get a receipt for my donation?",
     answer:
-      "A donation receipt is automatically sent to your registered email address within 24 hours of a successful transaction. If you do not receive it, please contact us at SurakshaCharitableTrust@gmail.com.",
+      "A donation receipt is automatically sent to your registered email address within 24 hours of a successful transaction. If you do not receive it, please contact us at savermonteiro@gmail.com.",
   },
 ]
 

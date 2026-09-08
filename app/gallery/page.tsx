@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge"
 type ApiGalleryEvent = {
   _id: string
   title: string
-  category: "education" | "healthcare" | "environment" | "community" | "events" | "other"
+  category: string
+  customCategory?: string
   date: string
   location: string
   description?: string
@@ -33,12 +34,14 @@ function MasonryImage({ src, alt }: { src: string; alt: string }) {
   )
 }
 
-const categoryLabels: Record<ApiGalleryEvent["category"], string> = {
+const categoryLabels: Record<string, string> = {
   education: "Education",
   healthcare: "Healthcare",
   environment: "Environment",
   community: "Community",
   events: "Events",
+  "co-curricular": "Co-curricular",
+  extracurricular: "Extracurricular",
   other: "Other",
 }
 
@@ -48,7 +51,16 @@ const categoryColors: Record<string, string> = {
   environment: "bg-emerald-100 text-emerald-800",
   community: "bg-amber-100 text-amber-800",
   events: "bg-indigo-100 text-indigo-800",
+  "co-curricular": "bg-violet-100 text-violet-800",
+  extracurricular: "bg-cyan-100 text-cyan-800",
   other: "bg-slate-100 text-slate-700",
+}
+
+function getCategoryLabel(event: Pick<ApiGalleryEvent, "category" | "customCategory">): string {
+  if (event.category === "other" && event.customCategory?.trim()) {
+    return event.customCategory.trim()
+  }
+  return categoryLabels[event.category] || event.category
 }
 
 export default function GalleryPage() {
@@ -109,7 +121,7 @@ export default function GalleryPage() {
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
               >
-                {cat === "all" ? "All" : categoryLabels[cat as ApiGalleryEvent["category"]]}
+                {cat === "all" ? "All" : categoryLabels[cat] || cat}
               </button>
             ))}
           </div>
@@ -160,9 +172,14 @@ export default function GalleryPage() {
                         variant="secondary"
                         className={`w-fit text-xs ${categoryColors[event.category] || ""}`}
                       >
-                        {categoryLabels[event.category]}
+                        {getCategoryLabel(event)}
                       </Badge>
                       <h3 className="text-lg font-semibold text-foreground">{event.title}</h3>
+                      {event.description ? (
+                        <p className="line-clamp-3 whitespace-pre-line text-sm text-muted-foreground">
+                          {event.description}
+                        </p>
+                      ) : null}
                       <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1.5">
                           <Calendar className="size-3.5 shrink-0" />
@@ -231,7 +248,12 @@ export default function GalleryPage() {
             >
               <div className="text-center">
                 <p className="text-lg font-semibold text-white">{currentEvent.title}</p>
-                <p className="text-sm text-white/60">
+                {currentEvent.description ? (
+                  <p className="mx-auto mt-1 max-w-2xl whitespace-pre-line text-sm text-white/70">
+                    {currentEvent.description}
+                  </p>
+                ) : null}
+                <p className="mt-1 text-sm text-white/60">
                   {currentEvent.images.length} photo{currentEvent.images.length > 1 ? "s" : ""}
                 </p>
               </div>

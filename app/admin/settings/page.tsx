@@ -25,6 +25,7 @@ type SettingsForm = {
   workingHours: string
   paymentTestMode: boolean
   csrProjectsEnabled: boolean
+  chatbotEnabled: boolean
   notifyNewDonation: boolean
   notifyFailedTransactions: boolean
   notifyWeeklySummary: boolean
@@ -34,12 +35,13 @@ type SettingsForm = {
 const defaultSettings: SettingsForm = {
   orgName: "Suraksha Charitable Trust",
   registrationNumber: "SCT-2015-IN-001",
-  orgEmail: "SurakshaCharitableTrust@gmail.com",
-  orgPhone: "+91 99999-00000",
-  orgAddress: "India",
+  orgEmail: "savermonteiro@gmail.com",
+  orgPhone: "+91 7892351129",
+  orgAddress: "Suraksha Charitable Trust, 1st Cross Marikamba Nagar, Sirsi, Karnataka, India",
   workingHours: "Mon - Sat: 9:00 AM - 6:00 PM",
   paymentTestMode: true,
   csrProjectsEnabled: true,
+  chatbotEnabled: true,
   notifyNewDonation: true,
   notifyFailedTransactions: true,
   notifyWeeklySummary: false,
@@ -89,6 +91,10 @@ export default function SettingsPage() {
         csrProjectsEnabled: toBoolean(
           general.csrProjectsEnabled,
           defaultSettings.csrProjectsEnabled
+        ),
+        chatbotEnabled: toBoolean(
+          general.chatbotEnabled,
+          defaultSettings.chatbotEnabled
         ),
         notifyNewDonation: toBoolean(
           notification.notifyNewDonation,
@@ -147,6 +153,11 @@ export default function SettingsPage() {
           {
             key: "csrProjectsEnabled",
             value: String(form.csrProjectsEnabled),
+            category: "general",
+          },
+          {
+            key: "chatbotEnabled",
+            value: String(form.chatbotEnabled),
             category: "general",
           },
           {
@@ -348,6 +359,25 @@ export default function SettingsPage() {
                 ON: the public Adopt a Project page and CSR Openings nav link
                 are visible. OFF: hides them from visitors (admin management
                 still works).
+              </span>
+            </div>
+          </div>
+          <Separator />
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={form.chatbotEnabled}
+              onCheckedChange={(value) =>
+                setForm((s) => ({ ...s, chatbotEnabled: value }))
+              }
+              id="chatbot-enabled"
+            />
+            <div className="flex flex-col">
+              <Label htmlFor="chatbot-enabled" className="text-sm font-medium">
+                RAG Chatbot (Suraksha Sahayaka)
+              </Label>
+              <span className="text-xs text-muted-foreground">
+                ON: the AI chatbot widget is visible on all public pages.
+                OFF: hides the chatbot from visitors.
               </span>
             </div>
           </div>

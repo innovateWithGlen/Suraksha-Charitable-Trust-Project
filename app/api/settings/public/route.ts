@@ -9,6 +9,7 @@ const allowedKeys = [
   "orgAddress",
   "workingHours",
   "whatsApp",
+  "chatbotEnabled",
 ];
 
 export async function GET() {

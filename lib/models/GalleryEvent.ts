@@ -5,9 +5,20 @@ export interface IGalleryImage {
   caption?: string;
 }
 
+export type GalleryCategory =
+  | "education"
+  | "healthcare"
+  | "environment"
+  | "community"
+  | "events"
+  | "co-curricular"
+  | "extracurricular"
+  | "other";
+
 export interface IGalleryEvent extends Document {
   title: string;
-  category: "education" | "healthcare" | "environment" | "community" | "events" | "other";
+  category: GalleryCategory;
+  customCategory?: string;
   date: Date;
   location: string;
   description?: string;
@@ -23,9 +34,19 @@ const GalleryEventSchema = new Schema<IGalleryEvent>(
     title: { type: String, required: true },
     category: {
       type: String,
-      enum: ["education", "healthcare", "environment", "community", "events", "other"],
+      enum: [
+        "education",
+        "healthcare",
+        "environment",
+        "community",
+        "events",
+        "co-curricular",
+        "extracurricular",
+        "other",
+      ],
       required: true,
     },
+    customCategory: { type: String, trim: true },
     date: { type: Date, required: true },
     location: { type: String, required: true },
     description: { type: String },

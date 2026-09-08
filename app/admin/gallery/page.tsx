@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Plus, Trash2, ImageIcon, X, Save, Eye, Pencil, Calendar, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -21,10 +22,21 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 
+type GalleryCategory =
+  | "education"
+  | "healthcare"
+  | "environment"
+  | "community"
+  | "events"
+  | "co-curricular"
+  | "extracurricular"
+  | "other"
+
 type ApiGalleryEvent = {
   _id: string
   title: string
-  category: "education" | "healthcare" | "environment" | "community" | "events" | "other"
+  category: GalleryCategory
+  customCategory?: string
   date: string
   location: string
   description?: string
@@ -40,6 +52,8 @@ const categoryOptions = [
   { value: "environment", label: "Environment" },
   { value: "community", label: "Community" },
   { value: "events", label: "Events" },
+  { value: "co-curricular", label: "Co-curricular" },
+  { value: "extracurricular", label: "Extracurricular" },
   { value: "other", label: "Other" },
 ] as const
 
@@ -49,7 +63,16 @@ const categoryColors: Record<string, string> = {
   environment: "bg-emerald-100 text-emerald-800",
   community: "bg-amber-100 text-amber-800",
   events: "bg-indigo-100 text-indigo-800",
+  "co-curricular": "bg-violet-100 text-violet-800",
+  extracurricular: "bg-cyan-100 text-cyan-800",
   other: "bg-slate-100 text-slate-700",
+}
+
+function getCategoryLabel(event: Pick<ApiGalleryEvent, "category" | "customCategory">): string {
+  if (event.category === "other" && event.customCategory?.trim()) {
+    return event.customCategory.trim()
+  }
+  return categoryOptions.find((c) => c.value === event.category)?.label || event.category
 }
 
 type ImageInputMode = "url" | "upload"
@@ -63,7 +86,8 @@ export default function AdminGalleryPage() {
   const [saving, setSaving] = useState(false)
 
   const [formTitle, setFormTitle] = useState("")
-  const [formCategory, setFormCategory] = useState<ApiGalleryEvent["category"] | "">("")
+  const [formCategory, setFormCategory] = useState<GalleryCategory | "">("")
+  const [formCustomCategory, setFormCustomCategory] = useState("")
   const [formDate, setFormDate] = useState("")
   const [formLocation, setFormLocation] = useState("")
   const [formDescription, setFormDescription] = useState("")
@@ -80,6 +104,7 @@ export default function AdminGalleryPage() {
   const resetForm = () => {
     setFormTitle("")
     setFormCategory("")
+    setFormCustomCategory("")
     setFormDate("")
     setFormLocation("")
     setFormDescription("")
@@ -99,6 +124,7 @@ export default function AdminGalleryPage() {
     setEditingEventId(event._id)
     setFormTitle(event.title)
     setFormCategory(event.category)
+    setFormCustomCategory(event.customCategory || "")
     setFormDate(new Date(event.date).toISOString().slice(0, 10))
     setFormLocation(event.location)
     setFormDescription(event.description || "")
@@ -173,17 +199,23 @@ export default function AdminGalleryPage() {
   }
 
   const saveEvent = async () => {
-    if (!formTitle || !formCategory || !formDate || !formLocation) {
+    if (!formTitle.trim() || !formCategory || !formDate || !formLocation.trim()) {
       toast.error("Please fill required fields")
       return
     }
 
+    if (formCategory === "other" && !formCustomCategory.trim()) {
+      toast.error("Please enter a custom category for Other")
+      return
+    }
+
     const payload = {
-      title: formTitle,
+      title: formTitle.trim(),
       category: formCategory,
+      customCategory: formCategory === "other" ? formCustomCategory.trim() : undefined,
       date: formDate,
-      location: formLocation,
-      description: formDescription || undefined,
+      location: formLocation.trim(),
+      description: formDescription.trim() || undefined,
       images: formImages.map((url) => ({ url })),
       isActive: true,
     }
@@ -262,7 +294,10 @@ export default function AdminGalleryPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <Label>Category</Label>
-                    <Select value={formCategory} onValueChange={(value) => setFormCategory(value as ApiGalleryEvent["category"])}>
+                    <Select
+                      value={formCategory}
+                      onValueChange={(value) => setFormCategory(value as GalleryCategory)}
+                    >
                       <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
@@ -281,6 +316,19 @@ export default function AdminGalleryPage() {
                   </div>
                 </div>
 
+                {formCategory === "other" ? (
+                  <div>
+                    <Label>Custom Category</Label>
+                    <Input
+                      value={formCustomCategory}
+                      onChange={(e) => setFormCustomCategory(e.target.value)}
+                      placeholder="e.g. Sports Day, Annual Fest..."
+                      maxLength={60}
+                      className="mt-1"
+                    />
+                  </div>
+                ) : null}
+
                 <div>
                   <Label>Location</Label>
                   <Input value={formLocation} onChange={(e) => setFormLocation(e.target.value)} className="mt-1" />
@@ -288,7 +336,14 @@ export default function AdminGalleryPage() {
 
                 <div>
                   <Label>Description (optional)</Label>
-                  <Input value={formDescription} onChange={(e) => setFormDescription(e.target.value)} className="mt-1" />
+                  <Textarea
+                    value={formDescription}
+                    onChange={(e) => setFormDescription(e.target.value)}
+                    placeholder="Write a short description of the event..."
+                    rows={4}
+                    maxLength={2000}
+                    className="mt-1"
+                  />
                 </div>
 
                 <div>
@@ -411,9 +466,12 @@ export default function AdminGalleryPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex flex-col gap-1.5">
                       <Badge variant="secondary" className={`w-fit text-xs ${categoryColors[event.category] || ""}`}>
-                        {categoryOptions.find((c) => c.value === event.category)?.label || event.category}
+                        {getCategoryLabel(event)}
                       </Badge>
                       <h3 className="text-lg font-semibold text-foreground">{event.title}</h3>
+                      {event.description ? (
+                        <p className="whitespace-pre-line text-sm text-muted-foreground">{event.description}</p>
+                      ) : null}
                       <div className="space-y-1 text-xs text-muted-foreground">
                         <p className="flex items-center gap-1">
                           <Calendar className="size-3" />

@@ -10,7 +10,7 @@ async function seed() {
   await dbConnect();
 
   const adminEmail = process.env.ADMIN_EMAIL || "glenmonteiro47@gmail.com";
-  const defaultPassword = "Admin@12345";
+  const defaultPassword = "Glen@SCTIN7175";
   const passwordHash = await bcrypt.hash(defaultPassword, 10);
 
   await User.findOneAndUpdate(
@@ -66,9 +66,9 @@ async function seed() {
   const settings = [
     { key: "orgName", value: "Suraksha Charitable Trust", category: "general" },
     { key: "csrProjectsEnabled", value: "true", category: "general" },
-    { key: "orgEmail", value: "SurakshaCharitableTrust@gmail.com", category: "general" },
-    { key: "orgPhone", value: "+91 99999-00000", category: "general" },
-    { key: "whatsApp", value: process.env.NEXT_PUBLIC_TRUST_WHATSAPP_NUMBER || "919876543210", category: "social" },
+    { key: "orgEmail", value: "savermonteiro@gmail.com", category: "general" },
+    { key: "orgPhone", value: "+91 7892351129", category: "general" },
+    { key: "whatsApp", value: process.env.NEXT_PUBLIC_TRUST_WHATSAPP_NUMBER || "917892351129", category: "social" },
   ] as const;
 
   for (const setting of settings) {

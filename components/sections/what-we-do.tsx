@@ -11,19 +11,19 @@ const fallbackPrograms = [
     icon: GraduationCap,
     title: "Education Support",
     description:
-      "Providing scholarships, school supplies, and tutoring programs to help underprivileged children access quality education.",
+      "Providing scholarships, school supplies, and vocational training to underprivileged children and youth — creating employment opportunities for disabled, orphans, and economically backward sections.",
   },
   {
     icon: HeartPulse,
-    title: "Healthcare Outreach",
+    title: "Medical Relief",
     description:
-      "Organizing medical camps, health awareness drives, and providing essential medicines to underserved communities.",
+      "Providing financial assistance for medications and surgeries, organizing free medical camps, and health awareness drives for economically disadvantaged communities.",
   },
   {
     icon: TreePine,
-    title: "Environmental Care",
+    title: "Community & Environment",
     description:
-      "Leading tree plantation drives, clean water initiatives, and sustainability workshops to protect our environment.",
+      "Relief to the poor, environmental protection, preservation of natural resources, and creating awareness on ecological developments for the betterment of society.",
   },
 ]
 
@@ -56,8 +56,8 @@ export async function WhatWeDoSection() {
             Our Programs & Initiatives
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground leading-relaxed">
-            Through our dedicated programs, we address the most pressing needs
-            of vulnerable communities and create lasting change.
+            Through our dedicated programs in education, healthcare, relief to
+            the poor, and community development, we create lasting impact.
           </p>
         </div>
 

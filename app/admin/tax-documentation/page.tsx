@@ -84,7 +84,7 @@ export default function TaxDocumentationPage() {
     const body =
       `Dear ${item.donorName},\n\nPlease find your 80G receipt below:\n${receiptUrl}\n\nRegards,\nSuraksha Charitable Trust`
     ;
-    const gmailCompose = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent("glenmonteiro47@gmail.com")}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const gmailCompose = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent("savermonteiro@gmail.com")}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(gmailCompose, "_blank", "noopener,noreferrer");
   };
 

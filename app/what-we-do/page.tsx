@@ -15,11 +15,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import dbConnect from "@/lib/mongodb"
 import { Content } from "@/lib/models"
+import { OrganizationSchema } from "@/components/seo"
 
 export const metadata: Metadata = {
-  title: "What We Do | Suraksha Charitable Trust",
+  title: "What We Do — Programs & Initiatives",
   description:
-    "Discover our programs in education, healthcare, environment, and women & child welfare.",
+    "Explore Suraksha Charitable Trust programs: education development, medical relief, relief to the poor, women empowerment, child welfare, and cultural activities.",
+  keywords: [
+    "NGO programs India",
+    "education development NGO",
+    "medical relief charity",
+    "relief to poor India",
+    "women empowerment NGO",
+    "child welfare programs",
+    "cultural activities trust",
+    "community development India",
+  ],
+  openGraph: {
+    title: "What We Do | Suraksha Charitable Trust",
+    description:
+      "Education, medical relief, community welfare, and cultural development programs across India.",
+    url: "https://www.surakshatrustin.org/what-we-do",
+  },
 }
 
 const corePrograms = [
@@ -27,11 +44,11 @@ const corePrograms = [
     icon: GraduationCap,
     title: "Education Development",
     description:
-      "We believe education is the most powerful tool for change. Our programs provide scholarships, school supplies, after-school tutoring, and digital literacy workshops to underprivileged children and youth.",
+      "The Trust aims to provide education by establishing and running schools, colleges, Industrial Training Centers, Vocational colleges, and Professional colleges — creating employment opportunities for disabled, orphans, and economically backward sections of society. We provide basic education to backward communities and tribes, educate on government schemes, empower women, and organize workshops on entrepreneurship development.",
     highlights: [
-      "Scholarships for 500+ students annually",
-      "After-school tutoring centers in 12 villages",
-      "Digital literacy labs for rural youth",
+      "Scholarship programme for underprivileged students",
+      "Distribution of books, notebooks, clothes, uniforms & meals",
+      "Workshops on entrepreneurship and self-employment",
       "Vocational training for school dropouts",
     ],
     image:
@@ -40,14 +57,14 @@ const corePrograms = [
   },
   {
     icon: HeartPulse,
-    title: "Health Development",
+    title: "Medical Relief & Healthcare",
     description:
-      "Access to quality healthcare remains a challenge for many communities. We organize medical camps, health awareness drives, and provide essential medicines to underserved populations.",
+      "The Trust provides financial assistance to poor people who are economically disadvantaged — paying for daily routine medications, surgery bills, and other related activities. We organize medical camps, health awareness drives, and provide essential medicines to underserved populations.",
     highlights: [
-      "Free medical camps reaching 2,000+ people yearly",
+      "Financial assistance for surgeries and medications",
+      "Free medical camps for underserved communities",
       "Maternal and child health programs",
-      "Mental health awareness workshops",
-      "Partnership with 15+ hospitals for referrals",
+      "Health awareness and hygiene education",
     ],
     image:
       "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&q=80",
@@ -55,14 +72,14 @@ const corePrograms = [
   },
   {
     icon: TreePine,
-    title: "Environment Development",
+    title: "Relief to Poor & Environmental Protection",
     description:
-      "Protecting our planet is integral to building sustainable communities. We lead tree plantation drives, clean water initiatives, waste management programs, and sustainability workshops.",
+      "The Trust helps financially disadvantaged people with everyday items, housing, and business support. We develop community and natural resources for sustainable development, preserve natural resources, and create awareness on environmental and ecological developments.",
     highlights: [
-      "10,000+ trees planted across 8 districts",
-      "Clean water projects in 20 villages",
-      "Community waste management programs",
-      "Sustainability education in schools",
+      "Financial assistance for housing and residential sites",
+      "Distribution of essentials to the poor and indigent",
+      "Environmental awareness and ecological development",
+      "Preservation of natural resources — land, water & vegetation",
     ],
     image:
       "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&q=80",
@@ -73,47 +90,47 @@ const corePrograms = [
 const welfarePrograms = [
   {
     icon: Baby,
-    title: "Child Welfare",
+    title: "Child Welfare & Orphans",
     description:
-      "Every child deserves a safe, nurturing environment. We run childcare centers, nutrition programs, and child protection initiatives to ensure the well-being and development of young lives.",
+      "Providing basic infrastructure, education facilities to orphans, and all facilities for betterment of their life. We run childcare centers, nutrition programs, and child protection initiatives to ensure the well-being of young lives.",
     highlights: [
-      "Nutrition programs for 300+ children",
-      "Safe childcare centers in underserved areas",
-      "Child rights awareness campaigns",
-      "Sponsorship programs for orphaned children",
+      "Support for orphaned children and student hostels",
+      "Nutrition and education programs for children",
+      "Mattress & blanket distribution to hostel boys",
+      "Sponsorship programs for underprivileged youth",
     ],
   },
   {
     icon: ShieldCheck,
     title: "Women Empowerment",
     description:
-      "Empowering women means empowering communities. We provide skill development training, self-help group support, legal aid, and entrepreneurship programs for women from marginalized backgrounds.",
+      "Educating and empowering women through skill development training, self-help group support, legal aid, and entrepreneurship programs for women from marginalized backgrounds.",
     highlights: [
-      "Self-help groups in 25+ communities",
-      "Skill development and vocational training",
+      "Workshops on entrepreneurship development",
+      "Self-help group formation and support",
       "Legal awareness and aid programs",
-      "Micro-enterprise support for women entrepreneurs",
+      "Skill development and vocational training",
     ],
   },
   {
     icon: Users,
-    title: "Community Welfare",
+    title: "Religious & Cultural Activities",
     description:
-      "Strong communities are the foundation of lasting change. We facilitate community development programs, disaster relief, elderly care, and social integration initiatives.",
+      "The Trust provides financial assistance to people of all religions to conduct religious activities. We conduct programs, seminars, training camps, and workshops in Indian Classical Dance, Music, Art, Culture, Literature, Science, Sports, and Health.",
     highlights: [
-      "Disaster relief and rehabilitation support",
-      "Elderly care and companionship programs",
-      "Community development workshops",
-      "Social integration for marginalized groups",
+      "Promotion of Indian Classical Dance, Music & Art",
+      "Cultural awareness programs in rural regions",
+      "Training institutes for arts and culture",
+      "Sports tournaments and healthy lifestyle promotion",
     ],
   },
 ]
 
 const impactStats = [
-  { value: "5,000+", label: "Lives Impacted" },
-  { value: "50+", label: "Active Projects" },
-  { value: "25+", label: "Communities Served" },
-  { value: "200+", label: "Active Volunteers" },
+  { value: "500+", label: "Lives Impacted" },
+  { value: "3+", label: "Active Projects" },
+  { value: "5+", label: "Communities Served" },
+  { value: "20+", label: "Active Volunteers" },
 ]
 
 export default async function WhatWeDoPage() {
@@ -132,6 +149,7 @@ export default async function WhatWeDoPage() {
 
   return (
     <>
+      <OrganizationSchema page="what-we-do" />
       {/* Hero banner */}
       <section className="relative flex items-center overflow-hidden bg-primary py-20 lg:py-28">
         <div className="absolute inset-0">
@@ -152,8 +170,9 @@ export default async function WhatWeDoPage() {
             What We Do
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-primary-foreground/70 leading-relaxed">
-            Through targeted programs in education, healthcare, environment, and
-            community welfare, we create lasting impact where it matters most.
+            From education and medical relief to cultural development and
+            environmental protection — we create lasting impact where it
+            matters most.
           </p>
         </div>
       </section>
@@ -166,11 +185,11 @@ export default async function WhatWeDoPage() {
               / Core Focus Areas /
             </span>
             <h2 className="mt-2 text-pretty text-3xl font-bold text-foreground sm:text-4xl">
-              Educational, Health & Environment Development
+              Education, Healthcare & Community Development
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground leading-relaxed">
-              Our three pillars of development address the most fundamental
-              needs of the communities we serve.
+              Our core programs address the most fundamental needs of
+              underprivileged communities across India.
             </p>
           </div>
 
@@ -253,11 +272,11 @@ export default async function WhatWeDoPage() {
               / Welfare Programs /
             </span>
             <h2 className="mt-2 text-pretty text-3xl font-bold text-foreground sm:text-4xl">
-              Women & Child Welfare
+              Welfare & Cultural Programs
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground leading-relaxed">
-              Protecting the most vulnerable and empowering communities to build
-              a better future for all.
+              Supporting children, women, and cultural development — building a
+              better future for all.
             </p>
           </div>
 

@@ -443,10 +443,16 @@ describe("galleryEventSchema", () => {
   });
 
   it("accepts all valid categories", () => {
-    const cats = ["education", "healthcare", "environment", "community", "events", "other"] as const;
+    const cats = ["education", "healthcare", "environment", "community", "events", "co-curricular", "extracurricular"] as const;
     for (const category of cats) {
       expect(galleryEventSchema.safeParse({ ...valid, category }).success).toBe(true);
     }
+  });
+
+  it("requires custom category when category is other", () => {
+    expect(galleryEventSchema.safeParse({ ...valid, category: "other" }).success).toBe(false);
+    expect(galleryEventSchema.safeParse({ ...valid, category: "other", customCategory: "" }).success).toBe(false);
+    expect(galleryEventSchema.safeParse({ ...valid, category: "other", customCategory: "Sports Day" }).success).toBe(true);
   });
 
   it("defaults images to empty array", () => {
