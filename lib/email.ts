@@ -3,37 +3,12 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM_EMAIL =
-  process.env.RESEND_FROM_EMAIL || "Suraksha Trust <onboarding@resend.dev>";
-const DEFAULT_TEST_INBOX = "glenmonteiro47@gmail.com";
+  process.env.RESEND_FROM_EMAIL || "Suraksha Trust <donate@mail.surakshatrustin.org>";
 
 async function sendWithRecipientFallback(
   payload: Parameters<typeof resend.emails.send>[0]
 ) {
-  const primary = await resend.emails.send(payload);
-  if (!(primary as any)?.error) {
-    return primary;
-  }
-
-  const errorMessage = String((primary as any)?.error?.message || "").toLowerCase();
-  const blockedByResendTestMode =
-    errorMessage.includes("you can only send testing emails to your own email address") ||
-    errorMessage.includes("verify a domain");
-
-  const fallbackRecipient = process.env.ADMIN_EMAIL || DEFAULT_TEST_INBOX;
-  const currentRecipient = Array.isArray((payload as any).to)
-    ? String((payload as any).to?.[0] || "")
-    : String((payload as any).to || "");
-
-  if (!blockedByResendTestMode || !fallbackRecipient || currentRecipient === fallbackRecipient) {
-    return primary;
-  }
-
-  const retried = await resend.emails.send({
-    ...payload,
-    to: fallbackRecipient,
-  });
-
-  return retried;
+  return await resend.emails.send(payload);
 }
 
 function looksLikeLocalhost(value: string): boolean {
@@ -77,30 +52,12 @@ function toAbsoluteUrl(pathOrUrl: string): string {
   return `${base}${normalizedPath}`;
 }
 
-function getTestInbox(): string | undefined {
-  const explicit = process.env.TEST_EMAIL_INBOX || process.env.DEMO_EMAIL_INBOX;
-  if (explicit) return explicit;
-
-  // For this deployment's test setup, always route to admin/owned inbox when no explicit test inbox is set.
-  return process.env.ADMIN_EMAIL || DEFAULT_TEST_INBOX;
-}
-
 function resolveRecipient(email: string): string {
-  const testInbox = getTestInbox();
-  if (testInbox) return testInbox;
-
-  const demoEnabled = process.env.DEMO_EMAIL_REDIRECT_ENABLED === "true";
-  if (!demoEnabled) return email;
-  return process.env.DEMO_EMAIL_INBOX || process.env.ADMIN_EMAIL || email;
+  return email;
 }
 
-function maybeRedirectNotice(originalEmail: string): string {
-  const routed = resolveRecipient(originalEmail);
-  if (routed === originalEmail) return "";
-
-  return `<p style="color:#64748b; font-size:12px; margin-top:10px;">Test mode: original recipient <strong>${escapeHtml(
-    originalEmail
-  )}</strong> was redirected to <strong>${escapeHtml(routed)}</strong>.</p>`;
+function maybeRedirectNotice(_originalEmail: string): string {
+  return "";
 }
 
 function escapeHtml(value: string): string {
@@ -339,11 +296,7 @@ export async function send80GReceiptEmail(params: {
     return;
   }
 
-  const fallbackFrom = "Suraksha Trust <onboarding@resend.dev>";
-  const fallback = await resend.emails.send({ from: fallbackFrom, ...commonPayload });
-  if (fallback.error) {
-    throw new Error(fallback.error.message || primary.error.message || "Failed to send 80G receipt email");
-  }
+  throw new Error(primary.error.message || "Failed to send 80G receipt email");
 }
 
 export async function sendCSRPledgeAdminNotification(pledge: {
