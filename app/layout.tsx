@@ -60,6 +60,7 @@ export const metadata: Metadata = {
         width: 512,
         height: 512,
         alt: "Suraksha Charitable Trust Logo",
+        type: "image/png",
       },
     ],
   },

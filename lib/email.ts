@@ -121,7 +121,7 @@ export async function sendDonationConfirmation(
           <p style="color: #94a3b8; font-size: 12px;">
             Suraksha Charitable Trust<br>
             Registered under Section 80G of Income Tax Act<br>
-            For queries: contact@surakshatrust.org
+            For queries: savermonteiro@gmail.com
           </p>
         </div>
       </div>
@@ -166,7 +166,7 @@ export async function sendCertificateEmail(
         <div style="text-align: center; margin: 30px 0;">
           <p style="color: #94a3b8; font-size: 12px;">
             Suraksha Charitable Trust<br>
-            For queries: contact@surakshatrust.org
+            For queries: savermonteiro@gmail.com
           </p>
         </div>
       </div>
