@@ -68,7 +68,7 @@ export default function AboutPage() {
         <div className="relative z-10 mx-auto max-w-7xl px-6 text-center">
           <span className="text-sm font-medium text-accent">/ About Us /</span>
           <h1 className="mt-2 text-balance text-4xl font-bold text-primary-foreground sm:text-5xl">
-            About Suraksha Charitable Trust
+           Suraksha Charitable Trust
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-primary-foreground/70 leading-relaxed">
             Registered on 3rd January 2022 under the Indian Trust Act, 1882,
