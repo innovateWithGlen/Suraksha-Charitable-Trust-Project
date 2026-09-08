@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input"
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -178,6 +179,9 @@ export default function AdminLayout({
                       />
                       Suraksha Admin
                     </SheetTitle>
+                    <SheetDescription className="sr-only">
+                      Admin navigation menu
+                    </SheetDescription>
                   </SheetHeader>
                   <div className="py-4">
                     <SidebarNav onItemClick={() => setMobileOpen(false)} />

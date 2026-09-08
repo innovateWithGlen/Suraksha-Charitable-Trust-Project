@@ -10,7 +10,7 @@ async function seed() {
   await dbConnect();
 
   const adminEmail = process.env.ADMIN_EMAIL || "glenmonteiro47@gmail.com";
-  const defaultPassword = "Glen@SCTIN7175";
+  const defaultPassword = "Glen@SCTIN7571";
   const passwordHash = await bcrypt.hash(defaultPassword, 10);
 
   await User.findOneAndUpdate(

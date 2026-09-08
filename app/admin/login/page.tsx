@@ -344,7 +344,10 @@ function AdminLoginContent() {
 
         <p className="text-center text-xs text-muted-foreground mt-6">
           &copy; {new Date().getFullYear()} Suraksha Charitable Trust. All
-          rights reserved.
+          rights reserved.{" "}
+          <a href="https://www.linkedin.com/in/glen-monteiro/" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground">
+            Designed by Glen Monteiro
+          </a>
         </p>
       </div>
     </div>

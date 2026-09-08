@@ -10,7 +10,7 @@ async function updatePassword() {
   await dbConnect();
 
   const adminEmail = process.env.ADMIN_EMAIL || "glenmonteiro47@gmail.com";
-  const newPassword = "Glen@SCTIN7175";
+  const newPassword = "newpassword123"; // Replace with the desired new password
   const passwordHash = await bcrypt.hash(newPassword, 10);
 
   const user = await User.findOneAndUpdate(
