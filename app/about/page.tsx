@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     "charitable trust India",
   ],
   openGraph: {
-    title: "About Us | Suraksha Charitable Trust",
+    title: " Suraksha Charitable Trust",
     description:
       "Registered on 3rd January 2022 under Indian Trust Act, 1882. Serving all humanity through education, healthcare, and community development.",
     url: "https://www.surakshatrustin.org/about",
