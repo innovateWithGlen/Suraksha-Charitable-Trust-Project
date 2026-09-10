@@ -17,7 +17,7 @@ export function AboutPreviewSection() {
           About Suraksha Charitable Trust
         </h2>
 
-        <div className="mt-10 lg:mt-16 grid gap-10 lg:grid-cols-2 lg:gap-16">
+        <div className="mt-10 lg:mt-16 grid gap-10 lg:grid-cols-2 lg:gap-16 items-center lg:items-start">
           {/* Text */}
           <div className="flex flex-col justify-center gap-6">
             <p className="text-base leading-relaxed text-muted-foreground">
@@ -44,12 +44,11 @@ export function AboutPreviewSection() {
           </div>
 
           {/* Image */}
-          <div className="relative overflow-hidden rounded-lg">
+          <div className="relative overflow-hidden rounded-lg lg:-mt-8">
             <img
-              src="https://images.unsplash.com/photo-1509099836639-18ba1795216d?w=800&q=80"
+              src="/images/9.jpeg"
               alt="Children learning in a community classroom"
               className="size-full rounded-lg object-cover"
-              crossOrigin="anonymous"
               loading="lazy"
               decoding="async"
             />

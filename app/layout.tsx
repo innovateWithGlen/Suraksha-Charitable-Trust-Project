@@ -99,16 +99,13 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
       { url: "/icon-192x192.png", type: "image/png", sizes: "192x192" },
       { url: "/icon-512x512.png", type: "image/png", sizes: "512x512" },
       { url: "/favicon-96x96.png", type: "image/png", sizes: "96x96" },
+      { url: "/favicon.ico", sizes: "any" },
     ],
     apple: [
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-    ],
-    other: [
-      { url: "/images/logo.svg", type: "image/svg+xml" },
     ],
   },
   manifest: "/site.webmanifest",

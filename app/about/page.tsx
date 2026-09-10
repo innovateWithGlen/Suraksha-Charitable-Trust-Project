@@ -114,17 +114,19 @@ export default function AboutPage() {
       <section className="bg-muted py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center lg:items-start">
-            <div className="relative overflow-hidden rounded-lg">
+            {/* Image - Left */}
+            <div className="relative overflow-hidden rounded-lg lg:-mt-8">
               <img
-                src="https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&q=80"
+                src="/images/volunteers.png"
                 alt="Community volunteers working together"
                 className="size-full rounded-lg object-cover"
-                crossOrigin="anonymous"
                 loading="lazy"
                 decoding="async"
               />
             </div>
-            <div className="flex flex-col gap-6">
+
+            {/* Text - Right */}
+            <div className="flex flex-col justify-center gap-6">
               <span className="text-sm font-medium text-secondary">
                 / Our Story /
               </span>
