@@ -11,10 +11,9 @@ const quickLinks = [
 ]
 
 const programs = [
-  { label: "Education Development", href: "/gallery" },
-  { label: "Medical Relief", href: "/gallery" },
-  { label: "Relief to Poor", href: "/gallery" },
-  { label: "Cultural Activities", href: "/gallery" },
+  { label: "Community", href: "/gallery?category=community" },
+  { label: "Education", href: "/gallery?category=education" },
+  { label: "Co-curricular", href: "/gallery?category=co-curricular" },
 ]
 
 export function Footer() {
@@ -103,10 +102,15 @@ export function Footer() {
                 <Mail className="mt-0.5 size-4 shrink-0" />
                 savermonteiro@gmail.com
               </a>
-              <div className="flex items-start gap-2">
+              <a
+                href="https://maps.app.goo.gl/VfUQKuPBkNZMh7Kh7"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-2 transition-colors hover:text-accent"
+              >
                 <MapPin className="mt-0.5 size-4 shrink-0" />
                 <span>Sirsi, Karnataka, India</span>
-              </div>
+              </a>
             </div>
           </div>
         </div>

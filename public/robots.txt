@@ -1,7 +1,18 @@
-# Suraksha Charitable Trust
+# Suraksha Charitable Trust - https://www.surakshatrustin.org
+# Registered NGO under Indian Trust Act, 1882 | Section 80G | 12A | CSR-1
+
 User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /api/
 
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
+
+# Sitemaps
 Sitemap: https://www.surakshatrustin.org/sitemap.xml

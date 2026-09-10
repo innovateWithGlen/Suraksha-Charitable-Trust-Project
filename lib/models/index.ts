@@ -12,6 +12,7 @@ export { default as CSRProject } from "./CSRProject";
 export { default as CorporateSponsor } from "./CorporateSponsor";
 export { default as CSRPledge } from "./CSRPledge";
 export { default as CSRExpense } from "./CSRExpense";
+export { default as CSRProjectSuggestion } from "./CSRProjectSuggestion";
 
 export type { IUser } from "./User";
 export type { IDonor } from "./Donor";
@@ -27,3 +28,4 @@ export type { ICSRProject } from "./CSRProject";
 export type { ICorporateSponsor } from "./CorporateSponsor";
 export type { ICSRPledge } from "./CSRPledge";
 export type { ICSRExpense } from "./CSRExpense";
+export type { ICSRProjectSuggestion } from "./CSRProjectSuggestion";

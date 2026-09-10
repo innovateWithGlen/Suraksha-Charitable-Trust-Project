@@ -17,7 +17,7 @@ export function AboutPreviewSection() {
           About Suraksha Charitable Trust
         </h2>
 
-        <div className="mt-10 grid gap-10 lg:grid-cols-2 lg:gap-16">
+        <div className="mt-10 lg:mt-16 grid gap-10 lg:grid-cols-2 lg:gap-16">
           {/* Text */}
           <div className="flex flex-col justify-center gap-6">
             <p className="text-base leading-relaxed text-muted-foreground">

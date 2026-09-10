@@ -4,21 +4,28 @@ import { Card, CardContent } from "@/components/ui/card"
 import { OrganizationSchema } from "@/components/seo"
 
 export const metadata: Metadata = {
-  title: "About Us",
+  title: "About Us – Registered Charitable Trust Under Indian Trust Act, 1882",
   description:
-    "Learn about Suraksha Charitable Trust — registered on 3rd January 2022 under Indian Trust Act, 1882. Our mission, vision, promoters, and activities for education, healthcare, and community welfare.",
+    "Learn about Suraksha Charitable Trust (R) — registered on 3rd January 2022 under Indian Trust Act, 1882. Approved under Section 80G & 12A. Our mission, vision, promoters, and activities for education, healthcare, and community welfare across India.",
   keywords: [
     "about Suraksha Charitable Trust",
-    "NGO Sirsi Karnataka",
+    "Suraksha Trust Sirsi Karnataka",
     "Lavina Monteiro",
     "Saver Monteiro",
-    "Indian Trust Act 1882",
+    "Indian Trust Act 1882 registration",
     "charitable trust India",
+    "80G 12A NGO India",
+    "registered trust Karnataka",
+    "NGO Sirsi",
+    "social welfare trust India",
   ],
+  alternates: {
+    canonical: "/about",
+  },
   openGraph: {
-    title: " Suraksha Charitable Trust",
+    title: "About Suraksha Charitable Trust – Registered NGO India",
     description:
-      "Registered on 3rd January 2022 under Indian Trust Act, 1882. Serving all humanity through education, healthcare, and community development.",
+      "Registered on 3rd January 2022 under Indian Trust Act, 1882. Section 80G & 12A approved. Serving all humanity through education, healthcare, and community development.",
     url: "https://www.surakshatrustin.org/about",
   },
 }
@@ -106,7 +113,7 @@ export default function AboutPage() {
       {/* Our Story */}
       <section className="bg-muted py-16 lg:py-24">
         <div className="mx-auto max-w-7xl px-6">
-          <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
+          <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center lg:items-start">
             <div className="relative overflow-hidden rounded-lg">
               <img
                 src="https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&q=80"

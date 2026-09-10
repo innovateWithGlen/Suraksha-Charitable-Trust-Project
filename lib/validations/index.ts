@@ -271,6 +271,18 @@ export const csrExpenseSchema = z.object({
   billDocumentUrl: z.string().url().optional().or(z.literal("")),
 });
 
+export const csrSuggestionSchema = z.object({
+  projectName: z.string().min(3, "Project name is required"),
+  category: z.enum(["Health", "Education", "Empowerment", "Environment"]),
+  description: z.string().min(20, "Please provide a detailed description (min 20 characters)"),
+  location: z.string().optional(),
+  estimatedBudget: z.number().min(0).optional(),
+  contactName: z.string().min(2, "Contact name is required"),
+  contactEmail: z.string().email("Invalid email address"),
+  contactPhone: z.string().optional(),
+  companyName: z.string().optional(),
+});
+
 // Certificate schemas
 export const certificateGenerateSchema = z.object({
   donationId: z.string(),

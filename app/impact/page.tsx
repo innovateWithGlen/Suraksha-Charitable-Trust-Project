@@ -1,7 +1,33 @@
+import type { Metadata } from "next"
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import dbConnect from "@/lib/mongodb";
 import { CSRProject, CorporateSponsor, CSRPledge } from "@/lib/models";
+
+export const metadata: Metadata = {
+  title: "Public Impact Dashboard – CSR Fund Utilization",
+  description:
+    "View the public impact dashboard of Suraksha Charitable Trust. Real-time CSR fund utilization, lives impacted, active projects, and corporate sponsorships. Transparent reporting for Section 80G and CSR compliance.",
+  keywords: [
+    "CSR impact India",
+    "NGO impact dashboard",
+    "CSR fund utilization",
+    "charitable trust impact report",
+    "corporate social responsibility results",
+    "Suraksha Trust impact",
+    "NGO transparency India",
+    "80G donation impact",
+  ],
+  alternates: {
+    canonical: "/impact",
+  },
+  openGraph: {
+    title: "Public Impact Dashboard | Suraksha Charitable Trust",
+    description:
+      "Real-time CSR fund utilization, lives impacted, and active project data for Suraksha Charitable Trust.",
+    url: "https://www.surakshatrustin.org/impact",
+  },
+}
 
 async function getImpactData() {
   await dbConnect();

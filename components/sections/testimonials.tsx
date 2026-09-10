@@ -11,13 +11,13 @@ const testimonials = [
   {
     quote:
       "Volunteering with Suraksha has been one of the most rewarding experiences of my life. The impact they make is truly remarkable.",
-    name: "Rahul Sharma",
+    name: "Aarya shetty",
     role: "Volunteer",
   },
   {
     quote:
       "Their healthcare camps in our village have made a real difference. Many families now have access to basic medical care.",
-    name: "Dr. Priya Patel",
+    name: "Elveena Nazareth",
     role: "Partner Doctor",
   },
 ]

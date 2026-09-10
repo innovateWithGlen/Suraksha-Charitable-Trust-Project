@@ -1,5 +1,5 @@
 interface OrganizationSchemaProps {
-  page?: "home" | "about" | "donate" | "contact" | "what-we-do" | "gallery" | "csr"
+  page?: "home" | "about" | "donate" | "contact" | "what-we-do" | "gallery" | "csr" | "adopt-project" | "impact"
 }
 
 export function OrganizationSchema({ page = "home" }: OrganizationSchemaProps) {
@@ -7,12 +7,12 @@ export function OrganizationSchema({ page = "home" }: OrganizationSchemaProps) {
     "@context": "https://schema.org",
     "@type": "NGO",
     name: "Suraksha Charitable Trust",
-    alternateName: "Suraksha Trust",
+    alternateName: ["Suraksha Trust", "Suraksha Charitable Trust Sirsi", "Suraksha NGO"],
     url: "https://www.surakshatrustin.org",
     logo: "https://www.surakshatrustin.org/icon-512x512.png",
     image: "https://www.surakshatrustin.org/icon-512x512.png",
     description:
-      "Suraksha Charitable Trust (R) is a registered NGO under Indian Trust Act, 1882. We serve all humanity through education, healthcare, relief to the poor, and cultural development.",
+      "Suraksha Charitable Trust (R) is a registered charitable trust under Indian Trust Act, 1882. Approved under Section 80G & 12A. CSR-1 registered NGO serving India through education, healthcare, relief to the poor, women empowerment, child welfare, and cultural development.",
     foundingDate: "2022-01-03",
     address: {
       "@type": "PostalAddress",
@@ -35,15 +35,20 @@ export function OrganizationSchema({ page = "home" }: OrganizationSchemaProps) {
       name: "India",
     },
     knowsAbout: [
-      "Charitable Trust",
+      "Charitable Trust in India",
       "NGO India",
       "Education for Underprivileged",
       "Healthcare for Poor",
       "80G Tax Donation",
+      "12A Registered NGO",
+      "CSR-1 Registered Trust",
       "CSR Projects India",
       "Community Development",
       "Women Empowerment",
       "Child Welfare",
+      "Relief to Poor",
+      "Indian Trust Act 1882",
+      "Donate Online India",
     ],
     potentialAction: {
       "@type": "DonateAction",
@@ -122,6 +127,24 @@ export function OrganizationSchema({ page = "home" }: OrganizationSchemaProps) {
       url: "https://www.surakshatrustin.org/csr",
       isPartOf: baseOrganization,
     },
+    "adopt-project": {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: "Adopt a CSR Project — Suraksha Charitable Trust",
+      description:
+        "Corporate partners can adopt open CSR projects in education, healthcare, environment, and empowerment. CSR-1 registered trust under Companies Act, 2013.",
+      url: "https://www.surakshatrustin.org/adopt-project",
+      isPartOf: baseOrganization,
+    },
+    impact: {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: "Public Impact Dashboard — Suraksha Charitable Trust",
+      description:
+        "Transparent CSR fund utilization dashboard. View lives impacted, active projects, and corporate sponsorships.",
+      url: "https://www.surakshatrustin.org/impact",
+      isPartOf: baseOrganization,
+    },
   }
 
   const schema = pageSchemas[page] || baseOrganization
@@ -139,27 +162,37 @@ export function FAQSchema() {
     {
       question: "Is my donation to Suraksha Charitable Trust tax-deductible?",
       answer:
-        "Yes, all donations are eligible for tax deduction under Section 80G of the Income Tax Act. You will receive a donation receipt and 80G certificate after your donation is processed.",
+        "Yes, all donations to Suraksha Charitable Trust are eligible for tax deduction under Section 80G of the Income Tax Act. We are also registered under Section 12A. You will receive a donation receipt and 80G certificate after your donation is processed. This makes your donation to one of the best charitable trusts in India tax-efficient.",
     },
     {
       question: "How can I donate to Suraksha Charitable Trust?",
       answer:
-        "You can donate via UPI, credit/debit cards, net banking, or bank transfer through our secure Razorpay payment gateway. Visit surakshatrustin.org/donate to make a donation.",
+        "You can donate online via UPI, credit/debit cards, net banking, or bank transfer through our secure Razorpay payment gateway. Visit surakshatrustin.org/donate to make a donation. Suraksha Charitable Trust is a registered NGO under Indian Trust Act, 1882, and all donations are eligible for 80G tax benefits.",
     },
     {
       question: "What programs does Suraksha Charitable Trust run?",
       answer:
-        "We run programs in education development, medical relief, relief to the poor, women empowerment, child welfare, and cultural activities across India.",
+        "Suraksha Charitable Trust runs programs in education development, medical relief, relief to the poor, women empowerment, child welfare, environmental protection, and cultural activities across India. We are a CSR-1 registered trust that also partners with corporations for social responsibility projects.",
     },
     {
       question: "Where is Suraksha Charitable Trust located?",
       answer:
-        "Suraksha Charitable Trust is located at 1st Cross Marikamba Nagar, Sirsi, Karnataka, India. Contact us at +91 7892351129 or savermonteiro@gmail.com.",
+        "Suraksha Charitable Trust (R) is located at 1st Cross Marikamba Nagar, Sirsi, Karnataka 581401, India. Contact us at +91 7892351129 or savermonteiro@gmail.com. We serve communities across India from our base in Karnataka.",
     },
     {
       question: "Can companies partner with Suraksha Charitable Trust for CSR?",
       answer:
-        "Yes, we are CSR-1 registered. Companies can adopt our projects or partner with us for corporate social responsibility initiatives. Visit our CSR page for details.",
+        "Yes, Suraksha Charitable Trust is CSR-1 registered under the Companies Act, 2013. Companies can adopt our projects or partner with us for corporate social responsibility initiatives. We offer education, healthcare, environment, and empowerment projects for corporate sponsorship. Visit surakshatrustin.org/adopt-project for details.",
+    },
+    {
+      question: "What makes Suraksha Charitable Trust different from other NGOs?",
+      answer:
+        "Suraksha Charitable Trust is a registered trust under Indian Trust Act, 1882, approved under both Section 80G and 12A of the Income Tax Act, and is CSR-1 registered. We focus on holistic community development including education, healthcare, women empowerment, child welfare, and cultural activities — all without any profit motive.",
+    },
+    {
+      question: "How can I verify the registration of Suraksha Charitable Trust?",
+      answer:
+        "Suraksha Charitable Trust (R) was registered on 3rd January 2022 under the Indian Trust Act, 1882. We hold valid 80G, 12A, and CSR-1 registrations. You can verify our credentials by contacting us or visiting our About page at surakshatrustin.org/about.",
     },
   ]
 
@@ -198,6 +231,48 @@ export function BreadcrumbSchema({ items }: { items: Array<{ name: string; url: 
             name: item.name,
             item: `https://www.surakshatrustin.org${item.url}`,
           })),
+        }),
+      }}
+    />
+  )
+}
+
+export function LocalBusinessSchema() {
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "NonprofitType",
+          name: "Suraksha Charitable Trust",
+          alternateName: "Suraksha Trust",
+          url: "https://www.surakshatrustin.org",
+          logo: "https://www.surakshatrustin.org/icon-512x512.png",
+          image: "https://www.surakshatrustin.org/icon-512x512.png",
+          description:
+            "Suraksha Charitable Trust (R) is a registered charitable trust under Indian Trust Act, 1882. Approved under Section 80G & 12A. CSR-1 registered NGO serving India.",
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: "1st Cross Marikamba Nagar",
+            addressLocality: "Sirsi",
+            addressRegion: "Karnataka",
+            postalCode: "581401",
+            addressCountry: "IN",
+          },
+          geo: {
+            "@type": "GeoCoordinates",
+            latitude: 14.6191,
+            longitude: 74.8413,
+          },
+          telephone: "+91-7892351129",
+          email: "savermonteiro@gmail.com",
+          areaServed: {
+            "@type": "Country",
+            name: "India",
+          },
+          foundingDate: "2022-01-03",
+          nonprofitStatus: "Registered Charitable Trust",
         }),
       }}
     />

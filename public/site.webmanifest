@@ -1,19 +1,33 @@
 {
-  "name": "Suraksha Charitable Trust",
+  "name": "Suraksha Charitable Trust – Registered NGO India",
   "short_name": "Suraksha Trust",
+  "description": "Registered charitable trust under Indian Trust Act, 1882. Section 80G & 12A approved. CSR-1 registered NGO serving India through education, healthcare, and community development.",
   "icons": [
+    {
+      "src": "/favicon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
     {
       "src": "/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
   "theme_color": "#ffffff",
   "background_color": "#ffffff",
-  "display": "standalone"
+  "display": "standalone",
+  "start_url": "/",
+  "id": "/",
+  "scope": "/",
+  "lang": "en-IN",
+  "dir": "ltr",
+  "orientation": "any"
 }

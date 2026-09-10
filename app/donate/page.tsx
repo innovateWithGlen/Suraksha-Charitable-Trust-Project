@@ -755,7 +755,7 @@ export default function DonatePage() {
                         Tax Deductible
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        80G tax benefit on all donations
+                        80G tax benefit on all eligible donations
                       </p>
                     </div>
                   </div>

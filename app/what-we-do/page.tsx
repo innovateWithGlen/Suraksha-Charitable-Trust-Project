@@ -18,23 +18,29 @@ import { Content } from "@/lib/models"
 import { OrganizationSchema } from "@/components/seo"
 
 export const metadata: Metadata = {
-  title: "What We Do — Programs & Initiatives",
+  title: "What We Do – Programs & Initiatives | Education, Healthcare & Community Development",
   description:
-    "Explore Suraksha Charitable Trust programs: education development, medical relief, relief to the poor, women empowerment, child welfare, and cultural activities.",
+    "Explore Suraksha Charitable Trust programs: education development, medical relief, relief to the poor, women empowerment, child welfare, environmental protection, and cultural activities across India. CSR-1 registered NGO.",
   keywords: [
     "NGO programs India",
-    "education development NGO",
-    "medical relief charity",
+    "education development NGO India",
+    "medical relief charity India",
+    "free medical camp India",
     "relief to poor India",
-    "women empowerment NGO",
-    "child welfare programs",
-    "cultural activities trust",
+    "women empowerment NGO India",
+    "child welfare programs India",
+    "cultural activities trust India",
     "community development India",
+    "environmental protection NGO",
+    "Suraksha Trust programs",
   ],
+  alternates: {
+    canonical: "/what-we-do",
+  },
   openGraph: {
-    title: "What We Do | Suraksha Charitable Trust",
+    title: "What We Do | Suraksha Charitable Trust – NGO Programs India",
     description:
-      "Education, medical relief, community welfare, and cultural development programs across India.",
+      "Education, medical relief, community welfare, women empowerment, child welfare, and cultural development programs across India.",
     url: "https://www.surakshatrustin.org/what-we-do",
   },
 }

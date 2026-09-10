@@ -32,7 +32,7 @@ const fallbackContactDetails = [
     icon: MapPin,
     title: "Address",
     value: "Suraksha Charitable Trust, 1st Cross Marikamba Nagar, Sirsi, Karnataka, India",
-    href: null,
+    href: "https://maps.app.goo.gl/VfUQKuPBkNZMh7Kh7",
   },
   {
     icon: Clock,
@@ -176,7 +176,7 @@ export default function ContactPage() {
             icon: MapPin,
             title: "Address",
             value: address,
-            href: null,
+            href: "https://maps.app.goo.gl/VfUQKuPBkNZMh7Kh7",
           },
           {
             icon: Clock,
@@ -299,6 +299,8 @@ export default function ContactPage() {
                       <a
                         key={detail.title}
                         href={detail.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="block"
                       >
                         {content}
