@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
+import { Trash2 } from "lucide-react"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -46,6 +47,17 @@ export default function InquiriesPage() {
     setActiveInquiry(inquiry)
     setReplyContent(inquiry.replyContent || "")
     setSendEmail(true)
+  }
+
+  const deleteInquiry = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this inquiry?")) return
+    const res = await fetch(`/api/contact/${id}`, { method: "DELETE" })
+    if (!res.ok) {
+      toast.error("Failed to delete inquiry")
+      return
+    }
+    mutate("/api/contact")
+    toast.success("Inquiry deleted")
   }
 
   const submitReply = async () => {
@@ -134,9 +146,14 @@ export default function InquiriesPage() {
                       />
                     </TableCell>
                     <TableCell>
-                      <Button size="sm" onClick={() => openReply(inq)}>
-                        Reply
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => openReply(inq)}>
+                          Reply
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => deleteInquiry(inq._id)}>
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

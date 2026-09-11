@@ -51,7 +51,8 @@ export default function AdoptProjectPage() {
   const [showSuggestion, setShowSuggestion] = useState(false);
   const [suggestionForm, setSuggestionForm] = useState({
     projectName: "",
-    category: "" as "" | "Health" | "Education" | "Empowerment" | "Environment",
+    category: "" as "" | "Health" | "Education" | "Empowerment" | "Environment" | "Community" | "Rural Development" | "Others",
+    customCategory: "",
     description: "",
     location: "",
     estimatedBudget: "",
@@ -113,7 +114,7 @@ export default function AdoptProjectPage() {
   };
 
   const submitSuggestion = async () => {
-    if (!suggestionForm.projectName || !suggestionForm.category || !suggestionForm.description || !suggestionForm.contactName || !suggestionForm.contactEmail) return;
+    if (!suggestionForm.projectName || !suggestionForm.category || !suggestionForm.description || !suggestionForm.contactName || !suggestionForm.contactEmail || !suggestionForm.companyName || (suggestionForm.category === "Others" && !suggestionForm.customCategory)) return;
     setSuggestionSubmitting(true);
     setSuggestionMessage("");
 
@@ -122,6 +123,7 @@ export default function AdoptProjectPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...suggestionForm,
+        category: suggestionForm.category === "Others" ? suggestionForm.customCategory : suggestionForm.category,
         estimatedBudget: suggestionForm.estimatedBudget ? Number(suggestionForm.estimatedBudget) : undefined,
       }),
     });
@@ -138,6 +140,7 @@ export default function AdoptProjectPage() {
     setSuggestionForm({
       projectName: "",
       category: "",
+      customCategory: "",
       description: "",
       location: "",
       estimatedBudget: "",
@@ -304,15 +307,30 @@ export default function AdoptProjectPage() {
                     id="category"
                     className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={suggestionForm.category}
-                    onChange={(e) => setSuggestionForm((s) => ({ ...s, category: e.target.value as typeof s.category }))}
+                    onChange={(e) => setSuggestionForm((s) => ({ ...s, category: e.target.value as typeof s.category, customCategory: e.target.value === "Others" ? s.customCategory : "" }))}
                   >
                     <option value="">Select category</option>
                     <option value="Health">Health</option>
                     <option value="Education">Education</option>
                     <option value="Empowerment">Empowerment</option>
                     <option value="Environment">Environment</option>
+                    <option value="Community">Community</option>
+                    <option value="Rural Development">Rural Development</option>
+                    <option value="Others">Others</option>
                   </select>
                 </div>
+
+                {suggestionForm.category === "Others" && (
+                  <div>
+                    <Label htmlFor="customCategory">Custom Category *</Label>
+                    <Input
+                      id="customCategory"
+                      placeholder="Enter your category"
+                      value={suggestionForm.customCategory}
+                      onChange={(e) => setSuggestionForm((s) => ({ ...s, customCategory: e.target.value }))}
+                    />
+                  </div>
+                )}
 
                 <div>
                   <Label htmlFor="location">Target Location</Label>
@@ -330,10 +348,11 @@ export default function AdoptProjectPage() {
                     id="description"
                     rows={4}
                     placeholder="Describe the project idea, target beneficiaries, expected outcomes, and how it aligns with CSR objectives..."
-                    className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    className={`mt-1 w-full rounded-md border border-input px-3 py-2 text-sm ${suggestionForm.description ? "bg-white" : "bg-[whitesmoke]"}`}
                     value={suggestionForm.description}
                     onChange={(e) => setSuggestionForm((s) => ({ ...s, description: e.target.value }))}
                   />
+                  <p className="mt-1 text-xs text-muted-foreground">Please provide a detailed description (min 20 characters)</p>
                 </div>
 
                 <div>
@@ -349,7 +368,7 @@ export default function AdoptProjectPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="companyName">Company Name (Optional)</Label>
+                  <Label htmlFor="companyName">Company Name *</Label>
                   <Input
                     id="companyName"
                     placeholder="Your organization name"
@@ -383,7 +402,7 @@ export default function AdoptProjectPage() {
                   <Label htmlFor="sugContactPhone">Contact Phone</Label>
                   <Input
                     id="sugContactPhone"
-                    placeholder="+91 98765 43210"
+                    placeholder="eg., +91 98765 43210"
                     value={suggestionForm.contactPhone}
                     onChange={(e) => setSuggestionForm((s) => ({ ...s, contactPhone: e.target.value }))}
                   />
@@ -392,7 +411,7 @@ export default function AdoptProjectPage() {
                 <div className="md:col-span-2 flex flex-col gap-3 sm:flex-row sm:items-center">
                   <Button
                     onClick={submitSuggestion}
-                    disabled={suggestionSubmitting || !suggestionForm.projectName || !suggestionForm.category || !suggestionForm.description || !suggestionForm.contactName || !suggestionForm.contactEmail}
+                    disabled={suggestionSubmitting || !suggestionForm.projectName || !suggestionForm.category || !suggestionForm.description || !suggestionForm.contactName || !suggestionForm.contactEmail || !suggestionForm.companyName || (suggestionForm.category === "Others" && !suggestionForm.customCategory) || suggestionForm.description.length < 20}
                     className="flex items-center gap-2"
                   >
                     {suggestionSubmitting ? (

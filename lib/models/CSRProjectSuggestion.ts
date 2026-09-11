@@ -2,14 +2,14 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface ICSRProjectSuggestion extends Document {
   projectName: string;
-  category: "Health" | "Education" | "Empowerment" | "Environment";
+  category: string;
   description: string;
   location?: string;
   estimatedBudget?: number;
   contactName: string;
   contactEmail: string;
   contactPhone?: string;
-  companyName?: string;
+  companyName: string;
   status: "pending" | "reviewed" | "approved" | "rejected";
   adminNotes?: string;
   createdAt: Date;
@@ -21,8 +21,8 @@ const CSRProjectSuggestionSchema = new Schema<ICSRProjectSuggestion>(
     projectName: { type: String, required: true, trim: true },
     category: {
       type: String,
-      enum: ["Health", "Education", "Empowerment", "Environment"],
       required: true,
+      trim: true,
     },
     description: { type: String, required: true },
     location: { type: String },
@@ -30,7 +30,7 @@ const CSRProjectSuggestionSchema = new Schema<ICSRProjectSuggestion>(
     contactName: { type: String, required: true },
     contactEmail: { type: String, required: true, lowercase: true },
     contactPhone: { type: String },
-    companyName: { type: String },
+    companyName: { type: String, required: true, trim: true },
     status: {
       type: String,
       enum: ["pending", "reviewed", "approved", "rejected"],

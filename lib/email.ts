@@ -115,8 +115,6 @@ export async function sendDonationConfirmation(
 
         <p style="color: #334155;">This email serves as your donation receipt.</p>
         
-        ${donation.requires80G ? '<p style="color: #334155;">Your 80G tax exemption certificate will be sent to you shortly.</p>' : ""}
-        
         <div style="text-align: center; margin: 30px 0;">
           <p style="color: #94a3b8; font-size: 12px;">
             Suraksha Charitable Trust<br>

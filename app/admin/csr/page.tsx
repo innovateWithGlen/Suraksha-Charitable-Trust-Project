@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import useSWR, { mutate as globalMutate } from "swr";
-import { Save, XCircle, CheckCircle, Ban, ChevronDown, Trash2 } from "lucide-react";
+import { Save, XCircle, CheckCircle, Ban, ChevronDown, Trash2, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,6 +61,7 @@ const initialForm = {
 
 const sectionOptions = {
   project: "Add New CSR Project",
+  suggestions: "Project Suggestions",
   expense: "Log Expense",
   pledges: "CSR Pledge Requests",
   transactions: "CSR Financial Activity",
@@ -85,6 +86,11 @@ export default function AdminCSRPage() {
   );
   const { data: csrTransactionsData, isLoading: csrTransactionsLoading } = useSWR(
     "/api/csr-transactions?limit=50",
+    fetcher,
+    { refreshInterval: 8000 }
+  );
+  const { data: suggestionsData, mutate: mutateSuggestions } = useSWR(
+    "/api/csr-suggestions",
     fetcher,
     { refreshInterval: 8000 }
   );
@@ -376,8 +382,19 @@ export default function AdminCSRPage() {
     ]);
   };
 
+  const updateSuggestionStatus = async (suggestionId: string, status: "approved" | "rejected" | "reviewed") => {
+    const response = await fetch("/api/csr-suggestions", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: suggestionId, status }),
+    });
+    if (!response.ok) return;
+    await mutateSuggestions();
+  };
+
   const pledges = pledgesData?.pledges || [];
   const csrTransactions = csrTransactionsData?.transactions || [];
+  const suggestions = suggestionsData?.suggestions || [];
 
   const startEdit = (project: any) => {
     setActiveSection("project");
@@ -525,6 +542,84 @@ export default function AdminCSRPage() {
             </div>
 
             {projectFeedback ? <p className="md:col-span-2 text-sm text-muted-foreground">{projectFeedback}</p> : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {activeSection === "suggestions" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lightbulb className="size-5 text-secondary" />
+              Project Suggestions
+            </CardTitle>
+            <CardDescription>Review and act on CSR project suggestions submitted by external users.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {suggestions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No suggestions yet.</p>
+            ) : null}
+            {suggestions.map((suggestion: any) => {
+              const statusColor =
+                suggestion.status === "approved"
+                  ? "bg-green-100 text-green-700 hover:bg-green-100"
+                  : suggestion.status === "rejected"
+                  ? "bg-red-100 text-red-700 hover:bg-red-100"
+                  : suggestion.status === "reviewed"
+                  ? "bg-blue-100 text-blue-700 hover:bg-blue-100"
+                  : "bg-yellow-100 text-yellow-700 hover:bg-yellow-100";
+              const isPending = suggestion.status === "pending";
+              return (
+                <div key={suggestion._id} className="rounded-lg border border-border p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <p className="font-semibold text-foreground">{suggestion.projectName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {suggestion.category} • {suggestion.companyName}
+                      </p>
+                      {suggestion.description ? (
+                        <p className="text-xs text-muted-foreground max-w-xl">{suggestion.description}</p>
+                      ) : null}
+                      {suggestion.location ? (
+                        <p className="text-xs text-muted-foreground">Location: {suggestion.location}</p>
+                      ) : null}
+                      {suggestion.estimatedBudget ? (
+                        <p className="text-xs text-muted-foreground">Budget: ₹{Number(suggestion.estimatedBudget).toLocaleString("en-IN")}</p>
+                      ) : null}
+                      <p className="text-xs text-muted-foreground">
+                        {suggestion.contactName} • {suggestion.contactEmail}{suggestion.contactPhone ? ` • ${suggestion.contactPhone}` : ""}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(suggestion.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={statusColor}>
+                        {suggestion.status.charAt(0).toUpperCase() + suggestion.status.slice(1)}
+                      </Badge>
+                      {isPending ? (
+                        <>
+                          <Button
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => updateSuggestionStatus(suggestion._id, "approved")}
+                          >
+                            <CheckCircle className="mr-1 size-3.5" />Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => updateSuggestionStatus(suggestion._id, "rejected")}
+                          >
+                            <Ban className="mr-1 size-3.5" />Reject
+                          </Button>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
       ) : null}

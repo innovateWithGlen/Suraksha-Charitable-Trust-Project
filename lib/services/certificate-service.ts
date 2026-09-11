@@ -8,7 +8,7 @@ import { signReceiptToken } from "@/lib/receipt-token";
 import { isValidIdProofNumber, isValidPanNumber, normalizeIdProofNumber, normalizePanNumber } from "@/lib/identity-format";
 
 const TRUST_NAME = "Suraksha Charitable Trust";
-const DEFAULT_URN = "80G/22AAATS0000A/S01";
+const DEFAULT_URN = "ABDTS0868C23BL02";
 
 function safeDecrypt(value?: string): string | undefined {
   if (!value) return undefined;

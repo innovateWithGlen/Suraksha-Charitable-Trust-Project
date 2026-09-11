@@ -64,9 +64,9 @@ export default function AboutPage() {
       <section className="relative flex items-center overflow-hidden bg-primary py-20 lg:py-28">
         <div className="absolute inset-0">
           <img
-            srcSet="https://images.unsplash.com/photo-1524069290683-0457abdc3563?w=640&q=75 640w, https://images.unsplash.com/photo-1524069290683-0457abdc3563?w=1200&q=75 1200w, https://images.unsplash.com/photo-1524069290683-0457abdc3563?w=1920&q=75 1920w"
+            srcSet="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=640&q=75 640w, https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1200&q=75 1200w, https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920&q=75 1920w"
             sizes="100vw"
-            src="https://images.unsplash.com/photo-1524069290683-0457abdc3563?w=1920&q=80"
+            src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920&q=80"
             alt=""
             className="size-full object-cover opacity-20"
             crossOrigin="anonymous"
@@ -115,7 +115,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center lg:items-start">
             {/* Image - Left */}
-            <div className="relative overflow-hidden rounded-lg lg:-mt-8">
+            <div className="relative overflow-hidden rounded-lg lg:-mt-8" style={{ marginTop: "3.125rem" }}>
               <img
                 src="/images/volunteers.png"
                 alt="Community volunteers working together"
